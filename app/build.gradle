@@ -1,0 +1,33 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 33
+
+    defaultConfig {
+        applicationId "com.livraison.wifiwatchdog"
+        minSdkVersion 24
+        // ★重要: targetSdkVersionを28以下にすることで
+        // Android 10(Q)以降で強化されたWi-Fi API制限
+        // (setWifiEnabled / enableNetwork 等が事実上無効化される問題)
+        // を回避し、旧来どおりアプリからWi-Fiを直接制御できるようにする。
+        targetSdkVersion 28
+        versionCode 1
+        versionName "1.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.core:core:1.10.1'
+}
