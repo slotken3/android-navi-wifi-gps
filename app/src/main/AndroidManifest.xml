@@ -24,7 +24,7 @@
         android:icon="@mipmap/ic_launcher"
         android:label="Wi-Fi自動復旧"
         android:supportsRtl="true"
-        android:theme="@android:style/Theme.DeviceDefault.Light">
+        android:theme="@style/AppTheme">
 
         <activity
             android:name=".MainActivity"
