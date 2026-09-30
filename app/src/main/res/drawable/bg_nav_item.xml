@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 設定画面の左の分類。選択中は activated -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_activated="true" android:drawable="@drawable/bg_segment_on" />
+    <item android:drawable="@drawable/bg_row" />
+</selector>

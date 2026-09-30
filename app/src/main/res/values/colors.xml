@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    配色は暗い色だけ(要件U3)。白地は作らない。
+    文字も純白にせず、夜間のまぶしさを抑える。
+-->
+<resources>
+    <color name="bg">#0A0E13</color>
+    <color name="surface">#141A22</color>
+    <color name="surface_high">#1C2430</color>
+    <color name="stroke">#232C38</color>
+    <color name="scrim">#E6050709</color>
+
+    <color name="text_primary">#E1E7ED</color>
+    <color name="text_secondary">#93A1B0</color>
+    <color name="text_disabled">#56616D</color>
+
+    <color name="ok">#3FB27F</color>
+    <color name="warn">#E0A43A</color>
+    <color name="ng">#E5534B</color>
+
+    <color name="accent_navi">#4C8DFF</color>
+    <color name="accent_video">#E8705F</color>
+    <color name="accent_music">#A77BF3</color>
+    <color name="accent_meeting">#3BB3B0</color>
+    <color name="accent_carplay">#5BBF6A</color>
+    <color name="accent_dashcam">#E0A43A</color>
+    <color name="accent_neutral">#93A1B0</color>
+</resources>

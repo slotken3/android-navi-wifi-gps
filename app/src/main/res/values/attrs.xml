@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="TileView">
+        <attr name="tileIcon" format="reference" />
+        <attr name="tileTitle" format="string" />
+        <attr name="tileAccent" format="color" />
+        <!-- ナビ用の大きいタイル -->
+        <attr name="tileLarge" format="boolean" />
+        <!-- 下段の横長ボタン(アイコンと文字を横に並べる) -->
+        <attr name="tileCompact" format="boolean" />
+    </declare-styleable>
+</resources>

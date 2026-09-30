@@ -1,5 +1,54 @@
 <resources>
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-        <!-- 必要になったら colorPrimary 等をここで上書き -->
+    <!-- 既存の設定画面・衛星情報画面。暗い配色に統一(要件U3) -->
+    <style name="AppTheme" parent="Theme.AppCompat">
+        <item name="colorPrimary">@color/surface</item>
+        <item name="colorPrimaryDark">@color/bg</item>
+        <item name="colorAccent">@color/accent_navi</item>
+        <item name="android:windowBackground">@color/bg</item>
+    </style>
+
+    <!-- ホーム画面と、そこから開く画面 -->
+    <style name="Theme.Home" parent="Theme.AppCompat.NoActionBar">
+        <item name="colorPrimary">@color/surface</item>
+        <item name="colorPrimaryDark">@color/bg</item>
+        <item name="colorAccent">@color/accent_navi</item>
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:navigationBarColor">@color/bg</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+    </style>
+
+    <!-- 画面上部のバー(戻る + 見出し) -->
+    <style name="AppBarTitle">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">24sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="SectionHeader">
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:paddingTop">16dp</item>
+        <item name="android:paddingBottom">8dp</item>
+    </style>
+
+    <!-- 押せるものは1辺64dp以上(要件U2) -->
+    <style name="BigButton">
+        <item name="android:minHeight">64dp</item>
+        <item name="android:minWidth">64dp</item>
+        <item name="android:paddingStart">20dp</item>
+        <item name="android:paddingEnd">20dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:background">@drawable/bg_button</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+
+    <style name="Card">
+        <item name="android:background">@drawable/bg_card</item>
+        <item name="android:padding">16dp</item>
     </style>
 </resources>

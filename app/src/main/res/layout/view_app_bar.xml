@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ホーム以外の画面の上部。戻るボタンと見出し -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="64dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <ImageButton
+        android:id="@+id/app_bar_back"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:background="@drawable/bg_button"
+        android:contentDescription="戻る"
+        android:src="@drawable/ic_back"
+        android:tint="@color/text_primary" />
+
+    <TextView
+        android:id="@+id/app_bar_title"
+        style="@style/AppBarTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_weight="1"
+        android:ellipsize="end"
+        android:maxLines="1" />
+
+    <TextView
+        android:id="@+id/app_bar_badge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_pill"
+        android:backgroundTint="@color/warn"
+        android:paddingStart="12dp"
+        android:paddingTop="4dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="4dp"
+        android:text="デモ表示中"
+        android:textColor="@color/bg"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+</LinearLayout>

@@ -41,6 +41,54 @@
             android:exported="false"
             android:label="衛星情報" />
 
+        <!-- ナビホーム(段階0のUI)。アプリ一覧から開ける -->
+        <activity
+            android:name=".home.HomeActivity"
+            android:clearTaskOnLaunch="true"
+            android:exported="true"
+            android:label="@string/home_name"
+            android:launchMode="singleTask"
+            android:stateNotNeeded="true"
+            android:theme="@style/Theme.Home">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!--
+            既定のホームにするための入口。初期状態は無効。
+            有効のままインストールすると、ホームボタンで選択画面が出て走行中に操作を求めるため、
+            設定 → ホームアプリ から明示的に有効にする(無効に戻せば純正のホームに戻る)。
+        -->
+        <activity-alias
+            android:name=".home.HomeAlias"
+            android:enabled="false"
+            android:exported="true"
+            android:label="@string/home_name"
+            android:targetActivity=".home.HomeActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity
+            android:name=".home.ConnectionActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Home" />
+
+        <activity
+            android:name=".home.SettingsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Home" />
+
+        <activity
+            android:name=".home.AppListActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Home" />
+
         <service
             android:name=".WifiMonitorService"
             android:enabled="true"

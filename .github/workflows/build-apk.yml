@@ -36,3 +36,57 @@ jobs:
         with:
           name: WifiWatchdog-debug-apk
           path: app/build/outputs/apk/debug/*.apk
+
+  # エミュレーター(1024×600・Android 10)で各画面を開き、スクリーンショットを撮る。
+  # 開いた直後に落ちる不具合もここで見つける(ビルドが通るだけでは分からないため)。
+  # 結果は Artifacts の ui-screenshots に入る。
+  ui-check:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ANDROID_AVD_HOME: /home/runner/.android/avd
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download APK
+        uses: actions/download-artifact@v4
+        with:
+          name: WifiWatchdog-debug-apk
+          path: apk
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Install emulator and create AVD
+        run: |
+          SDKMANAGER="$(ls "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager | head -n1)"
+          AVDMANAGER="$(dirname "$SDKMANAGER")/avdmanager"
+          yes | "$SDKMANAGER" --licenses > /dev/null || true
+          "$SDKMANAGER" "emulator" "platform-tools" "system-images;android-29;default;x86_64" > /dev/null
+          mkdir -p "$ANDROID_AVD_HOME"
+          echo no | "$AVDMANAGER" create avd -n navi -k "system-images;android-29;default;x86_64" --force
+          CONFIG="$ANDROID_AVD_HOME/navi.avd/config.ini"
+          sed -i '/^hw\.lcd\./d;/^hw\.keyboard/d;/^hw\.ramSize/d' "$CONFIG"
+          printf '%s\n' hw.lcd.width=1024 hw.lcd.height=600 hw.lcd.density=160 \
+            hw.keyboard=yes hw.ramSize=2048 >> "$CONFIG"
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+
+      - name: Boot emulator and take screenshots
+        run: |
+          "$ANDROID_HOME/emulator/emulator" -avd navi -no-window -no-audio -no-boot-anim \
+            -no-snapshot -gpu swiftshader_indirect -camera-back none -camera-front none \
+            > emulator.log 2>&1 &
+          bash scripts/ui-screenshots.sh "$(ls apk/*.apk | head -n1)" screenshots
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-screenshots
+          path: |
+            screenshots/
+            emulator.log
