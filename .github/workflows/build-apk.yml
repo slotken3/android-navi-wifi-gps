@@ -79,7 +79,7 @@ jobs:
         run: |
           "$ANDROID_HOME/emulator/emulator" -avd navi -no-window -no-audio -no-boot-anim \
             -no-snapshot -gpu swiftshader_indirect -camera-back none -camera-front none \
-            > emulator.log 2>&1 &
+            -timezone Asia/Tokyo > emulator.log 2>&1 &
           bash scripts/ui-screenshots.sh "$(ls apk/*.apk | head -n1)" screenshots
 
       - name: Upload screenshots

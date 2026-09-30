@@ -145,7 +145,7 @@ public class SettingsActivity extends BaseActivity {
             if (pkg != null) value = AppCatalog.label(this, pkg);
             else if (pkgs.isEmpty()) value = "未設定";
             else value = "見つかりません";
-            addRow(s.title, pkgs.isEmpty() ? null : "候補:" + TextUtils.join("、", pkgs),
+            addRow(s.title, pkgs.isEmpty() ? null : TextUtils.join("、", pkgs),
                     value, v -> pickApp(s, false));
         }
         addNote("ホーム画面のタイルを長押ししても変更できます(停車中のみ)。"

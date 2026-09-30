@@ -6,6 +6,8 @@
 
 1. `WifiMonitorService`(常駐フォアグラウンドサービス)による車内Wi-Fiの自動復旧
 2. `SatelliteInfoActivity` による衛星捕捉状況(みちびき/QZSS含む)の確認画面
+3. 自作ホーム画面「ナビホーム」(`home/` 配下)。要件定義書のフェーズ0として作ったUIの試作。
+   設計と、動くもの・デモ値のものの区別は `docs/phase0-ui.md`
 
 パッケージ名: `com.livraison.wifiwatchdog`
 
@@ -20,6 +22,16 @@
 - push すると Actions が自動でデバッグ署名APKをビルドする。
   Actionsタブ → 対象の実行 → Artifacts から `WifiWatchdog-debug-apk` を取得。
 - 現状デバッグ署名のみ。正式配布するならリリース署名を別途用意する。
+- 同じワークフローの `ui-check` ジョブが、エミュレーター(1024×600・Android 10)で各画面を撮影し、
+  開いた直後のクラッシュを検出する。結果は Artifacts の `ui-screenshots`。
+  画面を足したら `scripts/ui-screenshots.sh` にも撮影を足すこと。
+
+## UIの注意
+
+- 配色は暗い色だけ(要件U3)。押せるものは1辺64dp以上(U2)。
+- ホームの候補(HOME)は `activity-alias` で**初期無効**。有効のまま配ると、ホームボタンで
+  選択画面が出て走行中に操作を求めることになる。
+- 走行中は設定の変更を受け付けない(U5)。段階0では走行判定がデモ値。
 
 ## 実機・現地調査に関する詳細
 

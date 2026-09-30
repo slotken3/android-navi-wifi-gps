@@ -244,10 +244,9 @@ public class HomeActivity extends BaseActivity {
         tileStatus.setIcon(s.iconRes());
         tileStatus.setAccent(statusColor);
         tileStatus.setTitle(s.routeName());
-        String line1 = s.onlineText();
-        if (s.route == ConnectionStatus.Route.WIFI && s.ssid != null) line1 += " ・ " + s.ssid;
-        String line2 = "SIM " + s.usageText();
-        tileStatus.setSubtitle(line1 + "\n" + line2,
+        // SSIDは長くてあふれるので、接続状態の画面だけに出す
+        String line2 = "SIM " + s.usageTextShort() + "(デモ)";
+        tileStatus.setSubtitle(s.onlineTextShort() + "\n" + line2,
                 s.online ? color(R.color.text_secondary) : statusColor);
         tileStatus.setProgress(s.usagePercent(), color(s.usageColorRes()));
     }

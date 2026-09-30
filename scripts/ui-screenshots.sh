@@ -95,6 +95,7 @@ echo "== 240dpi"
 adb shell wm density 240
 sleep 3
 shot 30_home_240dpi           .home.HomeActivity "${REAL[@]}"
+shot 34_home_240dpi_sim_driving .home.HomeActivity --es demo_route sim --ez demo_driving true --ei demo_usage 85
 shot 31_picker_meeting_240dpi .home.HomeActivity "${REAL[@]}" --es open_panel meeting
 shot 32_connection_240dpi     .home.ConnectionActivity "${REAL[@]}"
 shot 33_settings_apps_240dpi  .home.SettingsActivity "${REAL[@]}" --es category apps

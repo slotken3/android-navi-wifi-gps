@@ -135,9 +135,10 @@ final class ConnectionStatus {
         }
     }
 
-    String onlineText() {
+    /** ホームのタイル用(1行に収まる長さ) */
+    String onlineTextShort() {
         if (route == Route.NONE) return "通信できません";
-        return online ? "通信OK" : "つながっているが通信できない";
+        return online ? "通信OK" : "通信できない";
     }
 
     int statusColorRes() {
@@ -169,6 +170,11 @@ final class ConnectionStatus {
 
     String usageText() {
         return String.format(Locale.JAPAN, "%.1f / %d GB",
+                simUsedMb / 1024f, simLimitMb / 1024);
+    }
+
+    String usageTextShort() {
+        return String.format(Locale.JAPAN, "%.1f/%dGB",
                 simUsedMb / 1024f, simLimitMb / 1024);
     }
 
