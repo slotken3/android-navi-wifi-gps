@@ -213,8 +213,11 @@ final class DeviceProbe {
                         zip.getInputStream(e), StandardCharsets.UTF_8))) {
                     String line;
                     while ((line = br.readLine()) != null) {
+                        // 行末にコメントが付く(「com.syu.air #空调控制」「com.teyes.carkit#天之眼DVR」)
+                        int hash = line.indexOf('#');
+                        if (hash >= 0) line = line.substring(0, hash);
                         line = line.trim();
-                        if (!line.isEmpty() && !line.startsWith("#")) r.entries.add(line);
+                        if (!line.isEmpty() && !r.entries.contains(line)) r.entries.add(line);
                     }
                 }
             } catch (IOException | SecurityException ex) {

@@ -364,7 +364,7 @@ public class SettingsActivity extends BaseActivity {
         }
         if (r.source == null) return;
 
-        addRow("読み取った件数", r.source, r.entries.size() + "件", null);
+        addRow("読み取った件数(重複を除く)", r.source, r.entries.size() + "件", null);
         addRow("com.tiantian.ttclock", "みんカラの記事で使われた名前",
                 r.entries.contains("com.tiantian.ttclock") ? "あり" : "なし", null);
         String match = DeviceProbe.prefixMatch(r.entries, getPackageName());
@@ -373,6 +373,19 @@ public class SettingsActivity extends BaseActivity {
                 match != null ? "該当:" + match : "該当なし", null);
         addNote("前方一致で判定しているかは未確認です(O1)。該当なしなら、"
                 + "段階1でパッケージ名を一覧の名前で始まるものに変えた版を作ります(O2)。");
+
+        // 純正機能のアプリ(ドラレコなど)がスリープで止められる側かを見る(要件定義書11章)
+        addHeader("タイルに割り当てたアプリ");
+        for (Slot s : Slot.values()) {
+            String pkg = AppCatalog.firstInstalled(this, HomePrefs.apps(this, s));
+            if (pkg == null) continue;
+            boolean listed = DeviceProbe.prefixMatch(r.entries, pkg) != null;
+            addRow(s.title + ":" + AppCatalog.label(this, pkg), pkg,
+                    listed ? "一覧にある" : "一覧に無い", null);
+        }
+        addNote("「一覧に無い」アプリは、スリープで止められる見込みです。");
+
+        addHeader("一覧の全件(# 以降のコメントは除いて表示)");
         addMono(TextUtils.join("\n", r.entries));
     }
 
