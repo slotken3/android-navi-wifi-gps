@@ -24,6 +24,7 @@ import com.livraison.wifiwatchdog.R;
 import com.livraison.wifiwatchdog.SatelliteInfoActivity;
 
 import java.util.List;
+import java.util.Locale;
 
 /**
  * 設定。左に分類、右に中身。中身はコードで組み立てる。
@@ -328,6 +329,14 @@ public class SettingsActivity extends BaseActivity {
     private void buildSurvey() {
         addHeader("画面(タイルの大きさの確認用)");
         addRow("画面の実寸", null, DeviceProbe.screenSummary(this), null);
+        TextView area = addRow("アプリが使える領域",
+                "ステータスバーなどを除いた広さ。タイルの大きさはこれで決まる", "計測中", null);
+        content.post(() -> {
+            View root = findViewById(android.R.id.content);
+            float d = getResources().getDisplayMetrics().density;
+            area.setText(String.format(Locale.JAPAN, "%d×%d dp",
+                    Math.round(root.getWidth() / d), Math.round(root.getHeight() / d)));
+        });
 
         addHeader("スリープで止めないアプリの一覧(protected_app.txt・要件O1)");
         addNote(DeviceProbe.FYT_SERVICE_PKG + " のapkの中から一覧を読みます。読むだけで、何も書き換えません。");
@@ -508,7 +517,9 @@ public class SettingsActivity extends BaseActivity {
         content.addView(t, lp);
     }
 
-    private void addRow(String title, String summary, String value, View.OnClickListener click) {
+    /** 戻り値は右側の値の表示(あとから書き換えるとき用) */
+    private TextView addRow(String title, String summary, String value,
+                            View.OnClickListener click) {
         View row = getLayoutInflater().inflate(R.layout.item_setting_row, content, false);
         ((TextView) row.findViewById(R.id.row_title)).setText(title);
         TextView sum = row.findViewById(R.id.row_summary);
@@ -516,7 +527,8 @@ public class SettingsActivity extends BaseActivity {
             sum.setText(summary);
             sum.setVisibility(View.VISIBLE);
         }
-        ((TextView) row.findViewById(R.id.row_value)).setText(value);
+        TextView valueView = row.findViewById(R.id.row_value);
+        valueView.setText(value);
         if (click != null) {
             row.setOnClickListener(click);
             row.findViewById(R.id.row_chevron).setVisibility(View.VISIBLE);
@@ -525,6 +537,7 @@ public class SettingsActivity extends BaseActivity {
             row.setBackgroundResource(R.drawable.bg_card);
         }
         content.addView(row);
+        return valueView;
     }
 
     private void addButton(String text, View.OnClickListener click) {

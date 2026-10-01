@@ -101,6 +101,28 @@ shot 32_connection_240dpi     .home.ConnectionActivity "${REAL[@]}"
 shot 33_settings_apps_240dpi  .home.SettingsActivity "${REAL[@]}" --es category apps
 adb shell wm density reset
 
+# 実機(Joying)はステータスバーが高く、タイルがエミュレーターより低い。
+# 上端を削って高さを再現し、入っているアプリを割り当てて補足を2行にした状態で撮る。
+# (2026-10-01、実機でタイルの補足の2行目が切れた。エミュレーターでは補足が1行で気づけなかった)
+echo "== 実機に近い高さ"
+SLOTS=(--es slot_navi com.android.settings
+       --es slot_video com.android.gallery3d,com.android.deskclock,com.android.calendar
+       --es slot_music com.android.documentsui,com.android.email,com.android.messaging
+       --es slot_meeting com.android.contacts,com.android.dialer
+       --es slot_carplay com.android.messaging
+       --es slot_dashcam com.android.deskclock)
+adb shell wm overscan 0,42,0,0 || echo "::warning::wm overscan が使えません"
+sleep 3
+shot 40_home_tall_bar         .home.HomeActivity "${REAL[@]}" "${SLOTS[@]}"
+shot 41_home_tall_bar_sim     .home.HomeActivity --es demo_route sim --ez demo_driving false --ei demo_usage 85 "${SLOTS[@]}"
+shot 42_picker_video_tall_bar .home.HomeActivity "${REAL[@]}" "${SLOTS[@]}" --es open_panel video
+adb shell wm density 240
+sleep 3
+shot 43_home_tall_bar_240dpi  .home.HomeActivity "${REAL[@]}" "${SLOTS[@]}"
+adb shell wm density reset
+shot 44_settings_survey_tall_bar .home.SettingsActivity "${REAL[@]}" --es category survey
+adb shell wm overscan reset || true
+
 echo "== クラッシュの確認"
 adb logcat -d -b crash > "$OUT/crash.txt" || true
 adb logcat -d > "$OUT/logcat.txt" || true

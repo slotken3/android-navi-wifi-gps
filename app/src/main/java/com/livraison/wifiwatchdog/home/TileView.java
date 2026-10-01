@@ -24,26 +24,34 @@ import com.livraison.wifiwatchdog.R;
  * ホーム画面のタイル。アイコン・名前・補足・進捗バーを持つ。
  * tileCompact=true のときは、下段用にアイコンと名前を横に並べる。
  *
- * 画面の密度が高くタイルが低いとき(240dpiで 1024×600 → 683×400dp など)は、
- * 丸いアイコンを外して名前の左に小さく出す「詰めた表示」に切り替える。
- * そうしないと、アイコンだけで高さを使い切って名前が見えなくなる。
+ * タイルの高さは機種のステータスバーや画面密度で変わる(実機はエミュレーターより低かった)。
+ * そこで、実際に測って中身が収まらなければ、次の順に詰めていく。
+ *   普通 → やや詰める(アイコンを小さく) → 詰める(丸いアイコンを外し、名前の左に小さく出す)
+ * 決めた高さのしきい値で切り替える方式は、実機で補足の2行目が切れたのでやめた。
  */
 public class TileView extends LinearLayout {
 
-    /** この高さ(dp)より低ければ詰めた表示にする */
-    private static final int DENSE_BELOW_DP = 170;
-    private static final int DENSE_BELOW_DP_LARGE = 230;
+    private static final int MODE_NORMAL = 0;
+    private static final int MODE_MEDIUM = 1;
+    private static final int MODE_DENSE = 2;
 
     private final ImageView icon;
     private final View iconBg;
+    private final View spacer;
     private final TextView title;
     private final TextView subtitle;
     private final ProgressBar progress;
     private final boolean large;
-    private boolean dense;
+    private int mode = -1;
     private int iconRes;
     private int accent;
     private CharSequence subtitleText;
+
+    // 前回どの条件で詰め方を決めたか。同じなら決め直さない(毎回決め直すと再描画が止まらない)
+    private int fitWidth = -1;
+    private int fitHeight = -1;
+    private CharSequence fitSubtitle;
+    private boolean fitProgress;
 
     public TileView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -70,54 +78,97 @@ public class TileView extends LinearLayout {
                 compact ? R.layout.view_tile_compact : R.layout.view_tile, this, true);
         icon = findViewById(R.id.tile_icon);
         iconBg = findViewById(R.id.tile_icon_bg);
+        spacer = findViewById(R.id.tile_spacer);
         title = findViewById(R.id.tile_title);
         subtitle = findViewById(R.id.tile_subtitle);
         progress = findViewById(R.id.tile_progress);
 
-        if (large && iconBg != null) {
-            // ナビ用の大きいタイル
-            ViewGroup.LayoutParams bg = iconBg.getLayoutParams();
-            bg.width = bg.height = Ui.dp(context, 88);
-            ViewGroup.LayoutParams ic = icon.getLayoutParams();
-            ic.width = ic.height = Ui.dp(context, 52);
-            title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 36);
-            subtitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
-        }
-
+        if (large && subtitle != null) subtitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
         if (iconRes != 0) icon.setImageResource(iconRes);
         title.setText(titleText);
         setContentDescription(titleText);
         setAccent(accent);
+        if (iconBg != null) applyMode(MODE_NORMAL);
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        if (iconBg != null && MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY) {
-            float heightDp = MeasureSpec.getSize(heightMeasureSpec)
-                    / getResources().getDisplayMetrics().density;
-            setDense(heightDp < (large ? DENSE_BELOW_DP_LARGE : DENSE_BELOW_DP));
+        if (iconBg == null || MeasureSpec.getMode(heightMeasureSpec) != MeasureSpec.EXACTLY) {
+            super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+            return;
         }
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        int w = MeasureSpec.getSize(widthMeasureSpec);
+        int h = MeasureSpec.getSize(heightMeasureSpec);
+        boolean prog = progress != null && progress.getVisibility() == VISIBLE;
+        if (w == fitWidth && h == fitHeight && prog == fitProgress
+                && TextUtils.equals(subtitleText, fitSubtitle)) {
+            super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+            return;
+        }
+        fitWidth = w;
+        fitHeight = h;
+        fitProgress = prog;
+        fitSubtitle = subtitleText;
+        for (int m = MODE_NORMAL; m <= MODE_DENSE; m++) {
+            applyMode(m);
+            super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+            if (contentHeight() <= h) return;
+        }
     }
 
-    private void setDense(boolean d) {
-        if (d == dense) return;
-        dense = d;
-        iconBg.setVisibility(d ? GONE : VISIBLE);
-        int pad = Ui.dp(getContext(), d ? 12 : 18);
+    /** 余白を含めた中身の高さ(伸び縮みする空白は数えない) */
+    private int contentHeight() {
+        int total = getPaddingTop() + getPaddingBottom();
+        for (int i = 0; i < getChildCount(); i++) {
+            View c = getChildAt(i);
+            if (c == spacer || c.getVisibility() == GONE) continue;
+            LayoutParams lp = (LayoutParams) c.getLayoutParams();
+            total += c.getMeasuredHeight() + lp.topMargin + lp.bottomMargin;
+        }
+        return total;
+    }
+
+    private void applyMode(int m) {
+        if (m == mode) return;
+        mode = m;
+        int circle;
+        int glyph;
+        int titleSp;
+        if (large) {
+            circle = m == MODE_NORMAL ? 88 : 64;
+            glyph = m == MODE_NORMAL ? 52 : 38;
+            titleSp = m == MODE_NORMAL ? 36 : (m == MODE_MEDIUM ? 32 : 30);
+        } else {
+            circle = m == MODE_NORMAL ? 56 : 40;
+            glyph = m == MODE_NORMAL ? 32 : 24;
+            titleSp = m == MODE_NORMAL ? 24 : (m == MODE_MEDIUM ? 22 : 21);
+        }
+        int pad = Ui.dp(getContext(), m == MODE_NORMAL ? 18 : (m == MODE_MEDIUM ? 14 : 12));
+
+        iconBg.setVisibility(m == MODE_DENSE ? GONE : VISIBLE);
+        ViewGroup.LayoutParams bg = iconBg.getLayoutParams();
+        bg.width = bg.height = Ui.dp(getContext(), circle);
+        iconBg.setLayoutParams(bg);
+        ViewGroup.LayoutParams ic = icon.getLayoutParams();
+        ic.width = ic.height = Ui.dp(getContext(), glyph);
+        icon.setLayoutParams(ic);
         setPadding(pad, pad, pad, pad);
-        title.setTextSize(TypedValue.COMPLEX_UNIT_SP, large ? (d ? 30 : 36) : (d ? 21 : 24));
+        title.setTextSize(TypedValue.COMPLEX_UNIT_SP, titleSp);
         if (subtitle != null) {
-            subtitle.setMaxLines(d && !large ? 1 : 2);
+            subtitle.setMaxLines(m == MODE_DENSE && !large ? 1 : 2);
             applySubtitle();
         }
         updateTitleIcon();
     }
 
+    private boolean dense() {
+        return mode == MODE_DENSE;
+    }
+
     /** 詰めた表示のときだけ、名前の左にアイコンを出す */
     private void updateTitleIcon() {
         Drawable d = null;
-        if (dense && iconRes != 0) {
+        if (dense() && iconRes != 0) {
             d = getContext().getDrawable(iconRes);
         }
         if (d != null) {
@@ -137,13 +188,13 @@ public class TileView extends LinearLayout {
             iconBg.setBackgroundTintList(
                     ColorStateList.valueOf(ColorUtils.setAlphaComponent(color, 0x33)));
         }
-        if (dense) updateTitleIcon();
+        if (dense()) updateTitleIcon();
     }
 
     public void setIcon(int res) {
         iconRes = res;
         icon.setImageResource(res);
-        if (dense) updateTitleIcon();
+        if (dense()) updateTitleIcon();
     }
 
     public void setTitle(CharSequence text) {
@@ -166,7 +217,7 @@ public class TileView extends LinearLayout {
     /** 詰めた表示では1行しか出せないので、改行より前だけを出す */
     private void applySubtitle() {
         CharSequence text = subtitleText;
-        if (dense && !large && text != null) {
+        if (dense() && !large && text != null) {
             int nl = TextUtils.indexOf(text, '\n');
             if (nl >= 0) text = text.subSequence(0, nl);
         }

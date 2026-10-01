@@ -10,6 +10,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.livraison.wifiwatchdog.BuildConfig;
 import com.livraison.wifiwatchdog.R;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 /** ホーム画面から開く画面の共通部分。 */
 abstract class BaseActivity extends AppCompatActivity {
 
@@ -39,6 +42,12 @@ abstract class BaseActivity extends AppCompatActivity {
         if (i.hasExtra("demo_usage")) {
             HomePrefs.setDemoUsagePercent(this,
                     i.getIntExtra("demo_usage", HomePrefs.DEFAULT_DEMO_USAGE));
+        }
+        // タイルの割り当て(例: --es slot_video com.android.gallery3d,com.android.deskclock)。
+        // エミュレーターに入っているアプリで、補足が2行になる状態を作るため
+        for (Slot s : Slot.values()) {
+            String v = i.getStringExtra("slot_" + s.key);
+            if (v != null) HomePrefs.setApps(this, s, new ArrayList<>(Arrays.asList(v.split(","))));
         }
     }
 
