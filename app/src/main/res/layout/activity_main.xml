@@ -17,6 +17,13 @@
         android:textStyle="bold"
         android:paddingBottom="16dp" />
 
+    <Button
+        android:id="@+id/home_button"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_marginBottom="16dp"
+        android:text="ナビホームを開く" />
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

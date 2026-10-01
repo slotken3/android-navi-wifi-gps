@@ -79,6 +79,10 @@ public class MainActivity extends AppCompatActivity {
 
         batteryButton.setOnClickListener(v -> requestIgnoreBatteryOptimizations());
 
+        // 一覧が1アプリにつき1アイコンしか出さない機種(Joying)では、ここからしか開けない
+        findViewById(R.id.home_button).setOnClickListener(v ->
+                startActivity(new Intent(this, com.livraison.wifiwatchdog.home.HomeActivity.class)));
+
         satelliteButton.setOnClickListener(v ->
                 startActivity(new Intent(this, SatelliteInfoActivity.class)));
     }
