@@ -94,6 +94,7 @@ public class WifiMonitorService extends Service {
     // 起動・スリープ復帰から通信できるまでの時間(要件N1)
     private long waitingOnlineSince = -1;
     private String waitingOnlineLabel;
+    private long monitorStartElapsed;
 
     // スリープの検知
     private boolean screenOff = false;
@@ -209,6 +210,7 @@ public class WifiMonitorService extends Service {
         registerReceiver(wifiStateReceiver, filter);
 
         long sinceBoot = SystemClock.elapsedRealtime();
+        monitorStartElapsed = sinceBoot;
         if (sinceBoot < BOOT_WINDOW_MS) {
             waitingOnlineSince = 0;
             waitingOnlineLabel = "起動";
@@ -416,9 +418,12 @@ public class WifiMonitorService extends Service {
                     + (appActed ? "アプリの復旧操作のあと" : "Androidが自動で再接続(アプリは操作していない)"));
         }
         if (waitingOnlineSince >= 0) {
-            log("起動".equals(waitingOnlineLabel) ? EventLog.BOOT : EventLog.SLEEP,
+            boolean boot = "起動".equals(waitingOnlineLabel);
+            // 起動のときは、監視を始めた時点で既につながっていた可能性があるので、開始時刻も残す
+            log(boot ? EventLog.BOOT : EventLog.SLEEP,
                     waitingOnlineLabel + "から" + EventLog.duration(now - waitingOnlineSince)
-                            + "で通信OK(" + routeName() + ")");
+                            + "で通信OK(" + routeName() + ")"
+                            + (boot ? " ・ 監視の開始は起動から" + EventLog.duration(monitorStartElapsed) : ""));
             waitingOnlineSince = -1;
         }
     }
