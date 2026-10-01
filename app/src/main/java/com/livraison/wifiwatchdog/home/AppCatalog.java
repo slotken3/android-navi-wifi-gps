@@ -38,6 +38,8 @@ final class AppCatalog {
         KNOWN.put("us.zoom.videomeetings", "Zoom");
         KNOWN.put("com.google.android.apps.tachyon", "Meet");
         KNOWN.put("com.zjinnova.zlink", "ZLINK");
+        KNOWN.put("com.syu.carlink", "Car Link");
+        KNOWN.put("com.williexing.android.apps.xcdvr1", "HD Car DVR");
         KNOWN.put("com.syu.radio", "ラジオ");
         KNOWN.put("com.syu.bt", "Bluetooth");
     }

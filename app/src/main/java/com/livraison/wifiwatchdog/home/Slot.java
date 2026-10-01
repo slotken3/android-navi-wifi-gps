@@ -8,8 +8,8 @@ import com.livraison.wifiwatchdog.R;
  * group=false: 候補のうち最初に入っているアプリを1タップで開く。
  * group=true : タイルを押すと選択パネルを出し、2タップ目で開く(要件U1・U11)。
  *
- * FYT純正アプリ(com.syu.*)と ZLINK のパッケージ名は推測。実機で違えば、
- * 設定 → ホーム画面のアプリ から選び直せる。
+ * ナビ・CarPlay・ドラレコ・ラジオ・電話の初期値は、2026-10-01 に実機で確かめた名前。
+ * 違えば 設定 → ホーム画面のアプリ から選び直せる。
  */
 enum Slot {
     NAVI("navi", "ナビ", false, R.drawable.ic_navigation,
@@ -20,10 +20,12 @@ enum Slot {
             "com.syu.music", "com.google.android.apps.youtube.music", "com.amazon.mp3"),
     MEETING("meeting", "会議", true, R.drawable.ic_meeting,
             "com.microsoft.teams", "us.zoom.videomeetings", "com.google.android.apps.tachyon"),
+    // 実機(Joying)は Car Link 2.0。ZLINK は他のFYT機で使われる名前
     CARPLAY("carplay", "CarPlay", false, R.drawable.ic_car,
-            "com.zjinnova.zlink"),
-    // ドラレコの表示アプリ名は未確認(要件定義 11章)。実機で選んでもらう
-    DASHCAM("dashcam", "ドラレコ", false, R.drawable.ic_videocam),
+            "com.syu.carlink", "com.zjinnova.zlink"),
+    // 実機のドラレコ表示アプリ「HD Car DVR」(2026-10-01 確認)
+    DASHCAM("dashcam", "ドラレコ", false, R.drawable.ic_videocam,
+            "com.williexing.android.apps.xcdvr1"),
     RADIO("radio", "ラジオ", false, R.drawable.ic_radio,
             "com.syu.radio"),
     PHONE("phone", "電話", false, R.drawable.ic_phone,
