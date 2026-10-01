@@ -43,6 +43,7 @@ public class TileView extends LinearLayout {
     private boolean dense;
     private int iconRes;
     private int accent;
+    private CharSequence subtitleText;
 
     public TileView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -106,7 +107,10 @@ public class TileView extends LinearLayout {
         int pad = Ui.dp(getContext(), d ? 12 : 18);
         setPadding(pad, pad, pad, pad);
         title.setTextSize(TypedValue.COMPLEX_UNIT_SP, large ? (d ? 30 : 36) : (d ? 21 : 24));
-        if (subtitle != null) subtitle.setMaxLines(d && !large ? 1 : 2);
+        if (subtitle != null) {
+            subtitle.setMaxLines(d && !large ? 1 : 2);
+            applySubtitle();
+        }
         updateTitleIcon();
     }
 
@@ -154,8 +158,19 @@ public class TileView extends LinearLayout {
     /** 補足の文字色を変える(アプリが見つからないときは注意の色にする) */
     public void setSubtitle(CharSequence text, int color) {
         if (subtitle == null) return;
-        subtitle.setText(text);
+        subtitleText = text;
         subtitle.setTextColor(color);
+        applySubtitle();
+    }
+
+    /** 詰めた表示では1行しか出せないので、改行より前だけを出す */
+    private void applySubtitle() {
+        CharSequence text = subtitleText;
+        if (dense && !large && text != null) {
+            int nl = TextUtils.indexOf(text, '\n');
+            if (nl >= 0) text = text.subSequence(0, nl);
+        }
+        subtitle.setText(text);
         subtitle.setVisibility(TextUtils.isEmpty(text) ? GONE : VISIBLE);
     }
 
