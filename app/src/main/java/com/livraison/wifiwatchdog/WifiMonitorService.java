@@ -334,11 +334,11 @@ public class WifiMonitorService extends Service {
         }
 
         new Thread(() -> {
-            boolean online = isActuallyOnline();
+            String problem = probeInternet();
             handler.post(() -> {
-                if (!online) {
-                    Log.w(TAG, "接続表示はあるが疎通確認に失敗。復旧処理を開始します。");
-                    startOutage("つながっているが通信できない(ルーターの停車時の制限など)");
+                if (problem != null) {
+                    Log.w(TAG, "接続表示はあるが疎通確認に失敗(" + problem + ")。復旧処理を開始します。");
+                    startOutage("つながっているが通信できない(確認の結果:" + problem + ")");
                     scheduleRecovery(0);
                     return;
                 }
@@ -353,18 +353,40 @@ public class WifiMonitorService extends Service {
         }).start();
     }
 
-    private boolean isActuallyOnline() {
+    /**
+     * Wi-Fi経由で本当にインターネットまで届くかを確かめる。届けば null、だめなら理由を返す。
+     *
+     * 以前は http(暗号化なし)で確かめていたが、targetSdk 28 では平文の通信が禁止されているため
+     * 常に失敗し、通信できているのに数分おきにWi-FiをOFF→ONしていた(2026-10-01、CIの記録で発覚)。
+     * https で、Wi-Fiの回線を指定して確かめる(SIMを入れたあとSIM経由で成功してしまわないように)。
+     */
+    @SuppressWarnings("deprecation")
+    private String probeInternet() {
+        ConnectivityManager cm = getSystemService(ConnectivityManager.class);
+        Network wifi = null;
+        if (cm != null) {
+            for (Network n : cm.getAllNetworks()) {
+                NetworkCapabilities nc = cm.getNetworkCapabilities(n);
+                if (nc != null && nc.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+                    wifi = n;
+                    break;
+                }
+            }
+        }
+        if (wifi == null) return "Wi-Fiの回線が無い";
         try {
-            URL url = new URL("http://connectivitycheck.gstatic.com/generate_204");
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            URL url = new URL("https://connectivitycheck.gstatic.com/generate_204");
+            HttpURLConnection conn = (HttpURLConnection) wifi.openConnection(url);
             conn.setConnectTimeout(4000);
             conn.setReadTimeout(4000);
             conn.setInstanceFollowRedirects(false);
+            conn.setUseCaches(false);
             int code = conn.getResponseCode();
             conn.disconnect();
-            return code == 204 || code == 200;
+            // 204以外(ログイン画面への転送など)は、インターネットに届いていない
+            return code == 204 ? null : "応答" + code;
         } catch (Exception e) {
-            return false;
+            return e.getClass().getSimpleName();
         }
     }
 

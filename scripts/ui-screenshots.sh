@@ -152,9 +152,18 @@ sleep 20
 shot_live 50_connection_log .home.ConnectionActivity "${REAL[@]}"
 shot_live 51_home_monitor   .home.HomeActivity "${REAL[@]}"
 adb shell cat "/data/data/$PKG/files/events.tsv" > "$OUT/events.tsv" || true
-for want in "Wi-Fi監視を開始" "Wi-FiをONに戻す操作" "通信が戻った" "画面OFF"; do
+for want in "Wi-Fi監視を開始" "Wi-FiをONに戻す操作" "画面OFF"; do
   grep -q "$want" "$OUT/events.tsv" || echo "::warning::記録に「$want」がありません"
 done
+# 通信の確認が一度も成功しないと、監視は通信できているのにWi-FiをOFF→ONし続ける
+# (2026-10-01、http の確認が常に失敗していた)。これは失敗として扱う
+if ! grep -q "通信が戻った" "$OUT/events.tsv"; then
+  echo "::error::Wi-Fiを戻したあとも「通信が戻った」が記録されていません(通信の確認が失敗し続けている)"
+  FAILED=1
+fi
+if grep -q "OFF→ONしてリセット" "$OUT/events.tsv"; then
+  echo "::warning::Wi-FiのOFF→ONが起きています。記録(events.tsv)を確認してください"
+fi
 if ! adb shell pidof "$PKG" >/dev/null; then
   echo "::error::監視サービスの動作確認のあと、アプリが終了していました"
   FAILED=1
