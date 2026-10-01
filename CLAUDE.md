@@ -9,7 +9,11 @@
 3. 自作ホーム画面「ナビホーム」(`home/` 配下)。要件定義書のフェーズ0として作ったUIの試作。
    設計と、動くもの・デモ値のものの区別は `docs/phase0-ui.md`
 
-パッケージ名: `com.livraison.wifiwatchdog`
+パッケージ名(applicationId): **`com.tiantian.ttclock`**(2026-10-01 から。要件O2)。
+FYTがスリープ時に止めないアプリの一覧(`com.syu.ms` 内の `protected_app.txt`)にある名前を借りている。
+**変えるとスリープで止められるようになるので、変えないこと。**
+コード上の名前(namespace・Javaのパッケージ)は `com.livraison.wifiwatchdog` のまま。
+adb などで画面を指定するときは `com.tiantian.ttclock/com.livraison.wifiwatchdog.home.HomeActivity` の形になる。
 
 ## ビルド上の注意
 

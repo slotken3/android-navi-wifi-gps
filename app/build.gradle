@@ -4,15 +4,19 @@ android {
     compileSdkVersion 33
 
     defaultConfig {
-        applicationId "com.livraison.wifiwatchdog"
+        // FYTの「スリープで止めないアプリの一覧」(com.syu.ms の protected_app.txt)にある名前そのもの(要件O2)。
+        // 本機の一覧に入っていることは 2026-10-01 に確認。完全一致・前方一致のどちらでも該当する。
+        // コード上の名前(namespace = manifest の package)は com.livraison.wifiwatchdog のまま。
+        // 変えると別のアプリ扱いになり、入れ直しと設定のやり直しが要る。
+        applicationId "com.tiantian.ttclock"
         minSdkVersion 24
         // ★重要: targetSdkVersionを28以下にすることで
         // Android 10(Q)以降で強化されたWi-Fi API制限
         // (setWifiEnabled / enableNetwork 等が事実上無効化される問題)
         // を回避し、旧来どおりアプリからWi-Fiを直接制御できるようにする。
         targetSdkVersion 28
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.1"
     }
 
     signingConfigs {

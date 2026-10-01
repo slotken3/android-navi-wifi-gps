@@ -9,7 +9,9 @@ set -euo pipefail
 
 APK=$1
 OUT=$2
-PKG=com.livraison.wifiwatchdog
+# アプリのパッケージ名(applicationId)と、コード上の名前(namespace)は違う(要件O2)
+PKG=com.tiantian.ttclock
+NS=com.livraison.wifiwatchdog
 FAILED=0
 mkdir -p "$OUT"
 
@@ -55,7 +57,7 @@ shot() {
   local name=$1 activity=$2
   shift 2
   adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null 2>&1 || true
-  adb shell am start -W -S -n "$PKG/$activity" "$@" >/dev/null
+  adb shell am start -W -S -n "$PKG/$NS$activity" "$@" >/dev/null
   sleep 3
   adb exec-out screencap -p > "$OUT/$name.png"
   if adb shell pidof "$PKG" >/dev/null; then
