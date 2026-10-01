@@ -28,8 +28,33 @@ jobs:
         with:
           gradle-version: 7.6.4
 
+      # 署名鍵を固定する。既定ではビルドのたびに新しいデバッグ鍵が作られ、
+      # 実機で上書きインストールできない(2026-10-01、毎回アンインストールが必要だった)。
+      - name: Restore fixed debug signing key
+        env:
+          DEBUG_KEYSTORE_BASE64: ${{ secrets.DEBUG_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$DEBUG_KEYSTORE_BASE64" ]; then
+            echo "::error::Secret DEBUG_KEYSTORE_BASE64 がありません。署名が毎回変わってしまうため止めます"
+            exit 1
+          fi
+          echo "$DEBUG_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/navi-debug.keystore"
+          echo "NAVI_DEBUG_KEYSTORE=$RUNNER_TEMP/navi-debug.keystore" >> "$GITHUB_ENV"
+
       - name: Build debug APK
         run: gradle assembleDebug --no-daemon
+
+      # 固定の鍵で署名されたかを、証明書の指紋で確かめる(指紋は公開してよい値)
+      - name: Check signing certificate
+        env:
+          EXPECTED_SHA256: 6125a2fa79034a3f7019e6a8b9b9064fd80d7e7694d34332c56c781570df0b0a
+        run: |
+          "$ANDROID_HOME/build-tools/33.0.2/apksigner" verify --print-certs \
+            app/build/outputs/apk/debug/app-debug.apk | tee certs.txt
+          if ! grep -qi "SHA-256 digest: $EXPECTED_SHA256" certs.txt; then
+            echo "::error::APKの署名が固定の鍵と違います。実機で上書きインストールできません"
+            exit 1
+          fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4

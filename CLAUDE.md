@@ -22,6 +22,10 @@
 - push すると Actions が自動でデバッグ署名APKをビルドする。
   Actionsタブ → 対象の実行 → Artifacts から `WifiWatchdog-debug-apk` を取得。
 - 現状デバッグ署名のみ。正式配布するならリリース署名を別途用意する。
+- **署名鍵は固定している。** GitHub Secrets の `DEBUG_KEYSTORE_BASE64` から復元し、
+  `app/build.gradle` の `signingConfigs.debug` で使う。証明書の指紋はワークフローで照合している。
+  鍵が変わると実機で上書きインストールできず、アンインストールで設定がすべて消える。
+  鍵の控えはリポジトリの外(利用者PCの `~/.android/navi-debug.keystore`)。鍵をリポジトリに入れないこと。
 - 同じワークフローの `ui-check` ジョブが、エミュレーター(1024×600・Android 10)で各画面を撮影し、
   開いた直後のクラッシュを検出する。結果は Artifacts の `ui-screenshots`。
   画面を足したら `scripts/ui-screenshots.sh` にも撮影を足すこと。
