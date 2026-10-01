@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 接続状態(要件N5・N6・N7、RT4)。左に今の状態、右に切断の記録 -->
+<!-- 接続状態(要件N5・N6・N7、RT4)。左に今の状態、右に自動で取った記録 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -188,7 +188,7 @@
             </LinearLayout>
         </ScrollView>
 
-        <!-- 切断の記録(要件N6・RT4) -->
+        <!-- 起動・スリープ・切断・復旧の記録(要件N6・RT4) -->
         <LinearLayout
             style="@style/Card"
             android:layout_width="0dp"
@@ -206,12 +206,13 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="切断の記録"
+                    android:text="記録(自動)"
                     android:textColor="@color/text_primary"
                     android:textSize="20sp"
                     android:textStyle="bold" />
 
                 <TextView
+                    android:id="@+id/log_count"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_pill"
@@ -220,8 +221,7 @@
                     android:paddingTop="2dp"
                     android:paddingEnd="10dp"
                     android:paddingBottom="2dp"
-                    android:text="サンプル"
-                    android:textColor="@color/warn"
+                    android:textColor="@color/text_secondary"
                     android:textSize="13sp" />
             </LinearLayout>
 
@@ -240,6 +240,17 @@
                 android:layout_weight="1"
                 android:divider="@color/stroke"
                 android:dividerHeight="1dp" />
+
+            <TextView
+                android:id="@+id/log_empty"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_marginTop="8dp"
+                android:layout_weight="1"
+                android:text="まだ記録がありません。起動・スリープ・切断・復旧を自動で記録します"
+                android:textColor="@color/text_secondary"
+                android:textSize="16sp"
+                android:visibility="gone" />
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>

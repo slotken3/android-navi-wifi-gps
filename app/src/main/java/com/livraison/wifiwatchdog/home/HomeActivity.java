@@ -15,7 +15,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.livraison.wifiwatchdog.BuildConfig;
+import com.livraison.wifiwatchdog.Prefs;
 import com.livraison.wifiwatchdog.R;
+import com.livraison.wifiwatchdog.WifiMonitorService;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -116,6 +118,13 @@ public class HomeActivity extends BaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        // ホームを開くたびに、監視が止まっていれば始める(要件U6)。
+        // 起動完了の通知が届かず監視が始まらなかったことがあるため(2026-10-01)
+        boolean autoStart = getSharedPreferences(Prefs.NAME, MODE_PRIVATE)
+                .getBoolean(Prefs.KEY_AUTO_START, true);
+        if (autoStart && !ConnectionStatus.isMonitorRunning(this)) {
+            WifiMonitorService.start(this, "ナビホームを開いた");
+        }
         handler.post(refresher);
     }
 

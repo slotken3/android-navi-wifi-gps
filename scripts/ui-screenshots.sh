@@ -125,6 +125,41 @@ adb shell wm density reset
 shot 44_settings_survey_tall_bar .home.SettingsActivity "${REAL[@]}" --es category survey
 adb shell wm overscan reset || true
 
+# 監視サービスを動かしたまま、Wi-Fiを切る・画面をOFF→ONして、自動の記録(要件N6)を確かめる。
+# ここからは強制停止せずに撮る(強制停止するとサービスも止まるため)
+shot_live() {
+  local name=$1 activity=$2
+  shift 2
+  adb shell am start -W -n "$PKG/$NS$activity" "$@" >/dev/null
+  sleep 3
+  adb exec-out screencap -p > "$OUT/$name.png"
+  echo "撮影: $name"
+}
+echo "== 監視サービスと記録"
+adb shell am force-stop "$PKG"
+adb shell am start-foreground-service -n "$PKG/$NS.WifiMonitorService" --es reason "CIで開始" >/dev/null
+sleep 25
+echo "Wi-Fiを切る(監視がONに戻すはず)"
+adb shell svc wifi disable
+sleep 45
+echo "画面OFF→ON(スリープと復帰の記録)"
+adb shell input keyevent 26
+sleep 5
+adb shell input keyevent 26
+sleep 2
+adb shell input keyevent 82
+sleep 20
+shot_live 50_connection_log .home.ConnectionActivity "${REAL[@]}"
+shot_live 51_home_monitor   .home.HomeActivity "${REAL[@]}"
+adb shell cat "/data/data/$PKG/files/events.tsv" > "$OUT/events.tsv" || true
+for want in "Wi-Fi監視を開始" "Wi-FiをONに戻す操作" "通信が戻った" "画面OFF"; do
+  grep -q "$want" "$OUT/events.tsv" || echo "::warning::記録に「$want」がありません"
+done
+if ! adb shell pidof "$PKG" >/dev/null; then
+  echo "::error::監視サービスの動作確認のあと、アプリが終了していました"
+  FAILED=1
+fi
+
 echo "== クラッシュの確認"
 adb logcat -d -b crash > "$OUT/crash.txt" || true
 adb logcat -d > "$OUT/logcat.txt" || true

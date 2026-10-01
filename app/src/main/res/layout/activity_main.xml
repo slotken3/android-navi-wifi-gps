@@ -59,7 +59,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
         android:checked="true"
-        android:text="端末起動時に自動で監視を開始する" />
+        android:text="自動で監視を開始する(端末の起動時・ナビホームを開いたとき)" />
 
     <Button
         android:id="@+id/save_button"
@@ -101,7 +101,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="状態: 待機中" />
+        android:text="状態: 確認中" />
 
 </LinearLayout>
 </ScrollView>

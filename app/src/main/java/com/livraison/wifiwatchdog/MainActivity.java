@@ -70,12 +70,15 @@ public class MainActivity extends AppCompatActivity {
 
         startButton.setOnClickListener(v -> {
             saveSettings();
-            startMonitorService();
-            statusText.setText("状態: 監視サービスを開始しました");
+            WifiMonitorService.start(this, "手動で開始");
+            statusText.setText("状態: 監視を開始しました");
         });
 
-        stopButton.setOnClickListener(v ->
-                stopService(new Intent(this, WifiMonitorService.class)));
+        // 停止したら自動では再開しない(以前は5秒後に勝手に再開していた)
+        stopButton.setOnClickListener(v -> {
+            WifiMonitorService.stop(this);
+            statusText.setText("状態: 停止しました");
+        });
 
         batteryButton.setOnClickListener(v -> requestIgnoreBatteryOptimizations());
 
@@ -97,13 +100,12 @@ public class MainActivity extends AppCompatActivity {
         Toast.makeText(this, "設定を保存しました", Toast.LENGTH_SHORT).show();
     }
 
-    private void startMonitorService() {
-        Intent intent = new Intent(this, WifiMonitorService.class);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(intent);
-        } else {
-            startService(intent);
-        }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // 以前は「待機中」の固定表示で、動いているか分からなかった
+        statusText.setText(WifiMonitorService.isRunning(this)
+                ? "状態: 監視中" : "状態: 停止中");
     }
 
     private String getCurrentSsid() {

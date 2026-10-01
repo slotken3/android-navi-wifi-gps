@@ -230,14 +230,13 @@ public class SettingsActivity extends BaseActivity {
                 running ? "稼働中" : "停止中", null);
         addRow("Wi-Fi監視の設定を開く", "対象SSID・自動起動・バッテリー最適化の除外", null,
                 v -> startActivity(new Intent(this, MainActivity.class)));
-        addRow("接続状態と切断の記録", null, null,
+        addRow("接続状態と記録", "起動・スリープ・切断・復旧を自動で記録(N6)", null,
                 v -> startActivity(new Intent(this, ConnectionActivity.class)));
 
-        addHeader("段階1で追加するもの");
-        addNote("・切断の記録を端末に保存する(時刻・原因・切替先。容量の上限つき。N6・O7)\n"
-                + "・Wi-Fiを優先し、使えないときはSIMへ切り替わるかの確認(N2・N3)\n"
-                + "・スリープ復帰後にWi-FiがOFFならONに戻す(N4)\n"
-                + "・パッケージ名を止めないアプリの一覧に合わせた版(O2)");
+        addHeader("これから追加するもの");
+        addNote("・Wi-Fiを優先し、使えないときはSIMへ切り替わるかの確認(N2・N3)\n"
+                + "・SIMの通信量の実測(N5)\n"
+                + "・走行中の判定(GPSの速度。U5)");
     }
 
     // ---------------------------------------------------------------
@@ -450,10 +449,10 @@ public class SettingsActivity extends BaseActivity {
         }
         addRow("バージョン", null, version, null);
         addRow("パッケージ名", null, getPackageName(), null);
-        addNote("段階0の画面です。\n"
-                + "実際に動くもの:アプリの起動、接続経路と通信できるかの表示、Wi-Fi監視の稼働表示、"
-                + "USB機器・カメラ・マイクの一覧、protected_app.txt の読み取り。\n"
-                + "デモ値のもの:SIMの通信量、切断の記録、走行中の判定。");
+        addNote("実際に動くもの:アプリの起動、接続経路と通信できるかの表示、Wi-Fi監視の稼働表示、"
+                + "起動・スリープ・切断・復旧の記録、USB機器・カメラ・マイクの一覧、"
+                + "protected_app.txt の読み取り。\n"
+                + "デモ値のもの:SIMの通信量、走行中の判定。");
     }
 
     // ---------------------------------------------------------------

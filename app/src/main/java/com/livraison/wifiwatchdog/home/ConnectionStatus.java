@@ -1,6 +1,5 @@
 package com.livraison.wifiwatchdog.home;
 
-import android.app.ActivityManager;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.Network;
@@ -13,7 +12,6 @@ import android.text.TextUtils;
 import com.livraison.wifiwatchdog.R;
 import com.livraison.wifiwatchdog.WifiMonitorService;
 
-import java.util.List;
 import java.util.Locale;
 
 /**
@@ -178,25 +176,8 @@ final class ConnectionStatus {
                 simUsedMb / 1024f, simLimitMb / 1024);
     }
 
-    // ---------------------------------------------------------------
-    // Wi-Fi監視サービスが動いているか
-    // ---------------------------------------------------------------
-    /**
-     * スリープ復帰後に止められていないかを画面で見るためのもの。
-     * getRunningServices は非推奨だが、自分のアプリのサービスは今も返る。
-     */
-    @SuppressWarnings("deprecation")
+    /** Wi-Fi監視サービスが動いているか */
     static boolean isMonitorRunning(Context c) {
-        ActivityManager am = c.getSystemService(ActivityManager.class);
-        if (am == null) return false;
-        List<ActivityManager.RunningServiceInfo> list = am.getRunningServices(100);
-        if (list == null) return false;
-        for (ActivityManager.RunningServiceInfo info : list) {
-            if (c.getPackageName().equals(info.service.getPackageName())
-                    && WifiMonitorService.class.getName().equals(info.service.getClassName())) {
-                return true;
-            }
-        }
-        return false;
+        return WifiMonitorService.isRunning(c);
     }
 }
