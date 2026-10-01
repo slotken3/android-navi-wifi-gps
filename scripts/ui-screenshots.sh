@@ -136,9 +136,21 @@ shot_live() {
   echo "撮影: $name"
 }
 echo "== 監視サービスと記録"
+# 実機と同じく位置情報を「使用中のみ」にする。裏で動いている間はWi-Fiの名前が隠される。
+# (2026-10-01、名前が読めないのを「未接続」と誤判定し、通信できているのにWi-FiをOFF→ONしていた)
+adb shell pm revoke "$PKG" android.permission.ACCESS_BACKGROUND_LOCATION \
+  || echo "::warning::位置情報の「常に許可」を外せませんでした"
 adb shell am force-stop "$PKG"
+BEFORE=$(adb shell "cat /data/data/$PKG/files/events.tsv 2>/dev/null | wc -l" | tr -d '\r ')
 adb shell am start-foreground-service -n "$PKG/$NS.WifiMonitorService" --es reason "CIで開始" >/dev/null
-sleep 25
+sleep 30
+# Wi-Fiが正常な間に「切断」と判断していたら、誤判定(失敗)
+adb shell "tail -n +$((BEFORE + 1)) /data/data/$PKG/files/events.tsv" > "$OUT/events_idle.tsv" || true
+if cut -f4 "$OUT/events_idle.tsv" | grep -qx cut; then
+  echo "::error::Wi-Fiが正常なのに切断と判断しました(記録: events_idle.tsv)"
+  cat "$OUT/events_idle.tsv"
+  FAILED=1
+fi
 echo "Wi-Fiを切る(監視がONに戻すはず)"
 adb shell svc wifi disable
 sleep 45

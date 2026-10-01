@@ -98,6 +98,8 @@ public class WifiMonitorService extends Service {
 
     // スリープの検知
     private boolean screenOff = false;
+    /** SSIDを読めないことを記録したか(同じ記録を繰り返さない) */
+    private boolean ssidHiddenLogged = false;
     private long lastTickElapsed;
     private long lastTickUptime;
 
@@ -129,6 +131,20 @@ public class WifiMonitorService extends Service {
             }
         }
         return false;
+    }
+
+    /**
+     * 位置情報の許可。Android 10 では「常に許可」でないと、裏で動いている間はWi-Fiの名前を読めない。
+     */
+    public static String locationPermission(Context c) {
+        boolean fine = c.checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION)
+                == android.content.pm.PackageManager.PERMISSION_GRANTED;
+        if (!fine) return "許可なし";
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return "常に許可";
+        boolean background = c.checkSelfPermission(
+                android.Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                == android.content.pm.PackageManager.PERMISSION_GRANTED;
+        return background ? "常に許可" : "使用中のみ";
     }
 
     /** 利用者の操作で止める。自動の再開はしない */
@@ -231,6 +247,7 @@ public class WifiMonitorService extends Service {
             started = true;
             log(EventLog.MONITOR, "Wi-Fi監視を開始(きっかけ:"
                     + (reason != null ? reason : "停止後の自動再開") + " ・ 対象:" + safeSsid()
+                    + " ・ 位置情報:" + locationPermission(this)
                     + " ・ 端末の起動から" + EventLog.duration(SystemClock.elapsedRealtime()) + ")");
         } else if (reason != null) {
             Log.i(TAG, "開始の指示(すでに動作中): " + reason);
@@ -318,25 +335,42 @@ public class WifiMonitorService extends Service {
     // ---------------------------------------------------------------
     // ヘルスチェック: 「接続中」表示でも実際に通信できているかを確認
     // ---------------------------------------------------------------
+    /**
+     * つながっているかは Android の回線情報(Wi-Fiの回線があるか)で判断し、
+     * Wi-Fiの名前(SSID)は読めるときだけ確かめる。
+     *
+     * Android 10 では位置情報の許可が「アプリの使用中のみ」だと、裏で動いている間は
+     * SSID が隠され(<unknown ssid>・networkId=-1)、以前はそれを「未接続」と誤判定して
+     * 通信できているのに Wi-Fi を OFF→ON し続けていた(2026-10-01、実機の記録で発覚)。
+     */
     private void checkHealthAndMaybeRecover() {
         if (recoveryInProgress || screenOff) return;
 
-        WifiInfo info = wifiManager.getConnectionInfo();
-        boolean linked = info != null && info.getNetworkId() != -1;
-        if (linked && info.getSSID() != null && !"<unknown ssid>".equals(info.getSSID())) {
-            lastSsid = info.getSSID().replace("\"", "");
+        Network wifiNet = findWifiNetwork();
+        String ssid = readSsid();
+        if (ssid != null) {
+            lastSsid = ssid;
+        } else if (wifiNet != null && !ssidHiddenLogged) {
+            ssidHiddenLogged = true;
+            log(EventLog.MONITOR, "接続中のWi-Fiの名前を読めない(位置情報の許可が「常に許可」でない可能性)。"
+                    + "名前は確かめず、つながっているかと通信できるかだけで判断する");
         }
-        boolean ssidMatches = linked && matchesTargetSsid(info.getSSID());
 
-        if (!ssidMatches) {
-            Log.w(TAG, "対象SSIDに接続していません。復旧処理を開始します。");
+        if (wifiNet == null) {
+            Log.w(TAG, "Wi-Fiにつながっていません。復旧処理を開始します。");
             startOutage(wifiManager.isWifiEnabled() ? classifyDisconnect() : "ナビ側のWi-FiがOFF");
+            scheduleRecovery(0);
+            return;
+        }
+        if (!TextUtils.isEmpty(targetSsid) && ssid != null && !ssid.equals(targetSsid)) {
+            // 使わないネットワーク(以前のスマホのテザリングなど)につながっている(要件N8)
+            startOutage("別のWi-Fi(" + ssid + ")につながっている");
             scheduleRecovery(0);
             return;
         }
 
         new Thread(() -> {
-            String problem = probeInternet();
+            String problem = probeInternet(wifiNet);
             handler.post(() -> {
                 if (problem != null) {
                     Log.w(TAG, "接続表示はあるが疎通確認に失敗(" + problem + ")。復旧処理を開始します。");
@@ -362,20 +396,7 @@ public class WifiMonitorService extends Service {
      * 常に失敗し、通信できているのに数分おきにWi-FiをOFF→ONしていた(2026-10-01、CIの記録で発覚)。
      * https で、Wi-Fiの回線を指定して確かめる(SIMを入れたあとSIM経由で成功してしまわないように)。
      */
-    @SuppressWarnings("deprecation")
-    private String probeInternet() {
-        ConnectivityManager cm = getSystemService(ConnectivityManager.class);
-        Network wifi = null;
-        if (cm != null) {
-            for (Network n : cm.getAllNetworks()) {
-                NetworkCapabilities nc = cm.getNetworkCapabilities(n);
-                if (nc != null && nc.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
-                    wifi = n;
-                    break;
-                }
-            }
-        }
-        if (wifi == null) return "Wi-Fiの回線が無い";
+    private String probeInternet(Network wifi) {
         try {
             URL url = new URL("https://connectivitycheck.gstatic.com/generate_204");
             HttpURLConnection conn = (HttpURLConnection) wifi.openConnection(url);
@@ -392,11 +413,25 @@ public class WifiMonitorService extends Service {
         }
     }
 
-    private boolean matchesTargetSsid(String currentSsidRaw) {
-        if (TextUtils.isEmpty(targetSsid)) return true; // 未設定なら常に許容
-        if (currentSsidRaw == null) return false;
-        String current = currentSsidRaw.replace("\"", "");
-        return current.equals(targetSsid);
+    /** つながっているWi-Fiの回線。無ければ null */
+    @SuppressWarnings("deprecation")
+    private Network findWifiNetwork() {
+        ConnectivityManager cm = getSystemService(ConnectivityManager.class);
+        if (cm == null) return null;
+        for (Network n : cm.getAllNetworks()) {
+            NetworkCapabilities nc = cm.getNetworkCapabilities(n);
+            if (nc != null && nc.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) return n;
+        }
+        return null;
+    }
+
+    /** 接続中のSSID。未接続、または隠されて読めなければ null */
+    private String readSsid() {
+        WifiInfo info = wifiManager.getConnectionInfo();
+        if (info == null || info.getSSID() == null) return null;
+        String raw = info.getSSID();
+        if ("<unknown ssid>".equals(raw)) return null;
+        return raw.replace("\"", "");
     }
 
     // ---------------------------------------------------------------
@@ -439,6 +474,8 @@ public class WifiMonitorService extends Service {
         if (target == null) return "Wi-Fiの切断";
         try {
             List<ScanResult> scans = wifiManager.getScanResults();
+            // 位置情報の許可が足りないと、周りのWi-Fiの一覧は空で返る。そのときは見当を付けない
+            if (scans == null || scans.isEmpty()) return "Wi-Fiの切断(周りのWi-Fiの一覧を読めない)";
             ScanResult best = null;
             if (scans != null) {
                 for (ScanResult r : scans) {

@@ -22,6 +22,7 @@ import androidx.appcompat.app.AlertDialog;
 import com.livraison.wifiwatchdog.MainActivity;
 import com.livraison.wifiwatchdog.R;
 import com.livraison.wifiwatchdog.SatelliteInfoActivity;
+import com.livraison.wifiwatchdog.WifiMonitorService;
 
 import java.util.List;
 import java.util.Locale;
@@ -228,6 +229,16 @@ public class SettingsActivity extends BaseActivity {
         boolean running = ConnectionStatus.isMonitorRunning(this);
         addRow("監視の状態", "スリープ復帰後に止められていないかをここで確かめる(要件O3)",
                 running ? "稼働中" : "停止中", null);
+        // 「使用中のみ」だと、裏で動いている間はWi-Fiの名前を読めない(Android 10)
+        addRow("位置情報の許可", "Wi-Fiの名前を読むのに必要。「常に許可」にする(タップでアプリ情報を開く)",
+                WifiMonitorService.locationPermission(this), v -> {
+                    try {
+                        startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                android.net.Uri.parse("package:" + getPackageName())));
+                    } catch (ActivityNotFoundException e) {
+                        Toast.makeText(this, "アプリ情報の画面を開けませんでした", Toast.LENGTH_SHORT).show();
+                    }
+                });
         addRow("Wi-Fi監視の設定を開く", "対象SSID・自動起動・バッテリー最適化の除外", null,
                 v -> startActivity(new Intent(this, MainActivity.class)));
         addRow("接続状態と記録", "起動・スリープ・切断・復旧を自動で記録(N6)", null,
