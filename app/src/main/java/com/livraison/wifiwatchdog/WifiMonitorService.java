@@ -322,8 +322,8 @@ public class WifiMonitorService extends Service {
     }
 
     private void onWake(String how) {
-        WifiInfo info = wifiManager.getConnectionInfo();
-        boolean linked = info != null && info.getNetworkId() != -1;
+        // 接続中かは回線情報で見る(Wi-Fiの名前が隠されているときも正しく出すため)
+        boolean linked = findWifiNetwork() != null;
         log(EventLog.SLEEP, how + "(復帰)。Wi-Fi " + (wifiManager.isWifiEnabled() ? "ON" : "OFF")
                 + " ・ " + (linked ? "接続中" : "未接続"));
         waitingOnlineSince = SystemClock.elapsedRealtime();
