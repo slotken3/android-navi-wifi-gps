@@ -213,7 +213,8 @@ final class DeviceProbe {
                         zip.getInputStream(e), StandardCharsets.UTF_8))) {
                     String line;
                     while ((line = br.readLine()) != null) {
-                        // 行末にコメントが付く(「com.syu.air #空调控制」「com.teyes.carkit#天之眼DVR」)
+                        // 行末に「#」で始まるコメントが付く行がある(空白なしで続く行もある)。
+                        // 一覧の中身は公開リポジトリに書かない(フェーズ0指示書「守ること」)
                         int hash = line.indexOf('#');
                         if (hash >= 0) line = line.substring(0, hash);
                         line = line.trim();
