@@ -231,6 +231,54 @@ final class DeviceProbe {
         return r;
     }
 
+    /** 解析用に保存した結果 */
+    static final class Export {
+        String path;
+        long size;
+        String sha256;
+        String error;
+    }
+
+    /**
+     * 入っているアプリの apk を、PCで解析するために Download フォルダへ写す(読むだけで、元は変えない)。
+     * ファームの AllAppUpdate.bin はパスワード付きで取り出せないため、実機の apk を使う
+     * (フェーズ0指示書 1-3・1-7)。保存したファイルは公開リポジトリに入れないこと。
+     * 時間がかかるので画面のスレッドでは呼ばない。
+     */
+    static Export exportApk(Context c, String pkg) {
+        Export r = new Export();
+        try {
+            ApplicationInfo ai = c.getPackageManager().getApplicationInfo(pkg, 0);
+            java.io.File src = new java.io.File(ai.sourceDir);
+            java.io.File dir = new java.io.File(
+                    android.os.Environment.getExternalStoragePublicDirectory(
+                            android.os.Environment.DIRECTORY_DOWNLOADS), "navi-analysis");
+            //noinspection ResultOfMethodCallIgnored
+            dir.mkdirs();
+            java.io.File dst = new java.io.File(dir, src.getName());
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+            try (java.io.InputStream in = new java.io.FileInputStream(src);
+                 java.io.OutputStream out = new java.io.FileOutputStream(dst)) {
+                byte[] buf = new byte[64 * 1024];
+                int n;
+                while ((n = in.read(buf)) > 0) {
+                    out.write(buf, 0, n);
+                    md.update(buf, 0, n);
+                    r.size += n;
+                }
+            }
+            StringBuilder hex = new StringBuilder();
+            for (byte x : md.digest()) hex.append(String.format(Locale.ROOT, "%02x", x));
+            r.sha256 = hex.toString();
+            r.path = dst.getAbsolutePath();
+        } catch (PackageManager.NameNotFoundException e) {
+            r.error = pkg + " が見つかりません";
+        } catch (Exception e) {
+            r.error = "保存できませんでした(" + e.getClass().getSimpleName() + ": " + e.getMessage() + ")";
+        }
+        return r;
+    }
+
     /**
      * pkg が一覧のどれかで始まっていれば、その名前を返す。
      * FYTが前方一致で判定しているかは未確認(要件O1・O3で確かめる)。

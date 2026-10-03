@@ -1,5 +1,6 @@
 package com.livraison.wifiwatchdog.home;
 
+import android.Manifest;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -65,6 +66,9 @@ public class SettingsActivity extends BaseActivity {
     private Category current = Category.APPS;
     /** 調査で読んだ一覧。画面を作り直しても残す */
     private DeviceProbe.ProtectedList protectedList;
+    /** 解析用に保存した結果。画面を作り直しても残す */
+    private DeviceProbe.Export lastExport;
+    private static final int REQ_STORAGE = 300;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -362,9 +366,57 @@ public class SettingsActivity extends BaseActivity {
         });
         if (protectedList != null) showProtectedList(protectedList);
 
+        addHeader("解析用に保存(フェーズ0 作業1)");
+        addNote("ナビに入っている " + DeviceProbe.FYT_SERVICE_PKG + " の apk を、内部ストレージの "
+                + "Download/navi-analysis に写します。USBメモリでPCへ移すと、一覧の判定方法"
+                + "(前方一致か)と車両情報の仕組みを調べられます。元のアプリは変えません。"
+                + "ファームの同じアプリはパスワード付きで取り出せないため、この方法を使います。");
+        addButton("com.syu.ms を保存する", v -> exportForAnalysis());
+        if (lastExport != null) showExport(lastExport);
+
         addHeader("衛星");
         addRow("衛星情報を見る(みちびき確認)", null, null,
                 v -> startActivity(new Intent(this, SatelliteInfoActivity.class)));
+    }
+
+    private void exportForAnalysis() {
+        if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    REQ_STORAGE);
+            return;
+        }
+        Toast.makeText(this, "保存しています…", Toast.LENGTH_SHORT).show();
+        new Thread(() -> {
+            DeviceProbe.Export r = DeviceProbe.exportApk(this, DeviceProbe.FYT_SERVICE_PKG);
+            runOnUiThread(() -> {
+                lastExport = r;
+                if (current == Category.SURVEY) rebuild();
+            });
+        }).start();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                                           int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode != REQ_STORAGE) return;
+        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            exportForAnalysis();
+        } else {
+            Toast.makeText(this, "ストレージの許可がないため保存できません", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void showExport(DeviceProbe.Export r) {
+        if (r.error != null) {
+            addNote(r.error, R.color.warn);
+            return;
+        }
+        addRow("保存先", null, r.path, null);
+        addRow("大きさ", "ファームの一覧では 7,128,768 バイト(同じなら同じ版の見込み)",
+                String.format(Locale.JAPAN, "%,d バイト", r.size), null);
+        addMono("SHA-256\n" + r.sha256);
     }
 
     private void showProtectedList(DeviceProbe.ProtectedList r) {

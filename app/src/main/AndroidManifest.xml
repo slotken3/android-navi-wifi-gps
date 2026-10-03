@@ -19,6 +19,9 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
+    <!-- 解析用に純正アプリの apk を Download に写す(フェーズ0 作業1。調査画面のボタンを押したときだけ求める) -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
     <application
         android:name=".WatchdogApp"
         android:allowBackup="true"
