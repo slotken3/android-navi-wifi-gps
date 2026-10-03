@@ -48,6 +48,7 @@
 | 4-10 | 「モバイルデータを常にON」の項目(N2) | 設定 → 開発者向けオプション → ネットワーク | 有無を記録(9/24に「あり」と確認済み) | |
 | 4-11 | ドラレコが今まで通り動くか(9章) | 録画・リアルタイム表示(HD Car DVR)・録画映像の再生 | 動く | |
 | 4-12 | エンジンOFFから5分後にUSBの給電が止まるか(9章) | エンジンOFF → 5分後に、USBにつないだ機器(ドラレコのランプなど)が消えるか | 止まる | |
+| 4-13 | スリープ後に Wi-Fi が OFF になったとき、OFF にしたのはどのアプリか(N4・利用者の依頼) | 下の「Wi-Fi を OFF にしたアプリの調べ方」 | OFFにしたアプリ名を記録する | |
 
 ### アプリの一覧表(4-5)
 
@@ -98,3 +99,42 @@ adb shell dumpsys meminfo
 ```
 
 `MemTotal`・`MemAvailable` と、`dumpsys meminfo` の上位のアプリを記録する。測り終えたらADBを無効に戻す。
+
+### Wi-Fi を OFF にしたアプリの調べ方(4-13)
+
+アプリを入れる前から、スリープ後に Wi-Fi が OFF になることがあった。どのアプリが OFF にしたかを調べる。
+Android 10 は、アプリが Wi-Fi を ON/OFF すると、システムの記録(logcat)に
+`setWifiEnabled package=<アプリ名> uid=<番号> enable=false` の行を残す。
+
+**A. 自動で記録する(おすすめ。ADB は最初の1回だけ)**
+
+1. PCとナビを ADB でつなぎ、1回だけ実行する:
+   ```
+   adb shell pm grant com.tiantian.ttclock android.permission.READ_LOGS
+   ```
+2. ナビホーム → 設定 → 調査 →「記録を読む許可(READ_LOGS)」が「許可済み」になる
+3. あとは普段どおり使う。Wi-Fi が OFF になるたびに、接続状態 → 記録 に
+   「Wi-FiをOFFにした操作:<時刻> <アプリ名>(uid …)がOFF」と残る
+4. 「アプリの操作ではない可能性」と出たときは、アプリからの ON/OFF の操作は無かった
+   (ナビ側の電源管理やドライバーで切れた)と見られる
+5. 調査 →「今すぐ調べる」で、直近の ON/OFF の操作をいつでも見られる
+
+記録に出る名前の見方:
+
+| 名前 | 意味 |
+|---|---|
+| `com.tiantian.ttclock` | このアプリ(復旧操作の Wi-Fi OFF→ON) |
+| `com.android.settings` / `com.syu.settings` | 設定画面やクイック設定から、人が操作した |
+| `com.syu.ms` など `com.syu.*` | FYT の純正アプリが切った |
+| `android`・uid 1000 | システムが切った |
+| `com.android.shell` | ADB から切った |
+
+**B. ADB でその場で確かめる(OFF に気づいた直後)**
+
+```
+adb shell logcat -d | grep setWifiEnabled
+adb shell dumpsys wifi > wifi_off.txt
+```
+
+1行目に出た `package=` が OFF にしたアプリ。`dumpsys wifi` の結果はファイルに保存して CODE に渡す
+(Wi-Fi の状態の移り変わりが残っている)。**ファイルは公開の場所に置かない**(周りの Wi-Fi の名前などが含まれる)。

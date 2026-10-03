@@ -189,6 +189,11 @@ if ! grep -q "通信が戻った" "$OUT/events.tsv"; then
   echo "::error::Wi-Fiを戻したあとも「通信が戻った」が記録されていません(通信の確認が失敗し続けている)"
   FAILED=1
 fi
+# Wi-FiをOFFにしたアプリの記録(READ_LOGS は adb install -g で与えられる)。svc wifi disable は com.android.shell の操作
+grep "Wi-FiをOFFにした操作" "$OUT/events.tsv" | cut -f5 | head -3 || true
+if ! grep "Wi-FiをOFFにした操作" "$OUT/events.tsv" | grep -q "com.android.shell"; then
+  echo "::warning::Wi-FiをOFFにしたアプリ(com.android.shell)が記録されていません"
+fi
 if grep -q "OFF→ONしてリセット" "$OUT/events.tsv"; then
   echo "::warning::Wi-FiのOFF→ONが起きています。記録(events.tsv)を確認してください"
 fi

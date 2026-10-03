@@ -29,6 +29,10 @@
     <uses-permission
         android:name="android.permission.WRITE_SECURE_SETTINGS"
         tools:ignore="ProtectedPermissions" />
+    <!-- Wi-Fi を OFF にしたアプリを調べる(logcat の setWifiEnabled)。ADB で1回だけ許可する -->
+    <uses-permission
+        android:name="android.permission.READ_LOGS"
+        tools:ignore="ProtectedPermissions" />
 
     <application
         android:name=".WatchdogApp"

@@ -176,6 +176,7 @@ public class WifiMonitorService extends Service {
                 int state = intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE,
                         WifiManager.WIFI_STATE_UNKNOWN);
                 if (state == WifiManager.WIFI_STATE_DISABLED) {
+                    traceWhoTurnedOff();
                     if (screenOff) {
                         log(EventLog.CUT, "スリープ中にWi-FiがOFFになった(復帰後に戻す)");
                         return;
@@ -512,6 +513,18 @@ public class WifiMonitorService extends Service {
         if (recoveryInProgress) return;
         recoveryInProgress = true;
         handler.postDelayed(this::runRecoveryStep, delayMs);
+    }
+
+    /**
+     * Wi-Fi を OFF にしたのはどのアプリかを記録に残す(スリープ後の OFF の原因調べ)。
+     * logcat を読むので別のスレッドで行い、その間だけ短く CPU を起こしておく。
+     */
+    private void traceWhoTurnedOff() {
+        if (wakeLock != null) wakeLock.acquire(10_000L);
+        new Thread(() -> {
+            List<String> toggles = WifiOffTracer.recentToggles(this);
+            log(EventLog.CUT, "Wi-FiをOFFにした操作:" + TextUtils.join(" / ", toggles));
+        }).start();
     }
 
     private void turnWifiOn() {

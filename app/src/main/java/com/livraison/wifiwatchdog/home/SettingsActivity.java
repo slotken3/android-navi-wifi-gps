@@ -24,6 +24,7 @@ import com.livraison.wifiwatchdog.MainActivity;
 import com.livraison.wifiwatchdog.R;
 import com.livraison.wifiwatchdog.SatelliteInfoActivity;
 import com.livraison.wifiwatchdog.WifiMonitorService;
+import com.livraison.wifiwatchdog.WifiOffTracer;
 
 import java.util.List;
 import java.util.Locale;
@@ -435,6 +436,21 @@ public class SettingsActivity extends BaseActivity {
         addButton("com.syu.ms を保存する", v -> exportForAnalysis());
         if (lastExport != null) showExport(lastExport);
 
+        addHeader("Wi-FiをOFFにしたアプリ(スリープ後のOFFの原因調べ)");
+        boolean canRead = WifiOffTracer.canRead(this);
+        addRow("記録を読む許可(READ_LOGS)",
+                canRead ? "Wi-FiがOFFになるたびに、OFFにしたアプリを自動で記録します(接続状態 → 記録)"
+                        : "ADBで1回だけ許可が要る: " + WifiOffTracer.GRANT_COMMAND,
+                canRead ? "許可済み" : "許可が必要", null);
+        addButton("今すぐ調べる(直近のON/OFFの操作)", v -> new Thread(() -> {
+            List<String> r = WifiOffTracer.recentToggles(this);
+            runOnUiThread(() -> new AlertDialog.Builder(this)
+                    .setTitle("直近のWi-FiのON/OFFの操作")
+                    .setMessage(TextUtils.join("\n", r))
+                    .setPositiveButton("閉じる", null)
+                    .show());
+        }).start());
+
         addHeader("衛星");
         addRow("衛星情報を見る(みちびき確認)", null, null,
                 v -> startActivity(new Intent(this, SatelliteInfoActivity.class)));
@@ -507,6 +523,21 @@ public class SettingsActivity extends BaseActivity {
                     listed ? "一覧にある" : "一覧に無い", null);
         }
         addNote("「一覧に無い」アプリは、スリープで止められる見込みです。");
+
+        // ランチャーなどを別のアプリにするときの名前の候補(利用者の依頼)
+        List<String> unused = new java.util.ArrayList<>();
+        for (String name : r.entries) {
+            try {
+                getPackageManager().getPackageInfo(name, 0);
+            } catch (PackageManager.NameNotFoundException e) {
+                unused.add(name);
+            }
+        }
+        addHeader("このナビに入っていない名前(別のアプリに使える候補)");
+        addRow("候補の数", "入っている名前は使えない(同じ名前のアプリは入れられない)。"
+                        + "このアプリ自身の名前も「入っている」に数える",
+                unused.size() + "件 / " + r.entries.size() + "件", null);
+        if (!unused.isEmpty()) addMono(TextUtils.join("\n", unused));
 
         addHeader("一覧の全件(# 以降のコメントは除いて表示)");
         addMono(TextUtils.join("\n", r.entries));
