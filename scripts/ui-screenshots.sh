@@ -166,6 +166,20 @@ sleep 20
 shot_live 50_connection_log .home.ConnectionActivity "${REAL[@]}"
 shot_live 51_home_monitor   .home.HomeActivity "${REAL[@]}"
 adb shell cat "/data/data/$PKG/files/events.tsv" > "$OUT/events.tsv" || true
+
+# 重ねるホームボタン(要件U10)。許可を与えて有効にし、別のアプリ(設定)の上に出るかを撮る
+echo "== 重ねるホームボタン"
+adb shell appops set "$PKG" SYSTEM_ALERT_WINDOW allow || echo "::warning::重ねて表示の許可を与えられませんでした"
+shot_live 52_home_overlay_enabled .home.HomeActivity "${REAL[@]}" --ez overlay_enabled true
+adb shell am start -W -a android.settings.SETTINGS >/dev/null
+sleep 3
+adb exec-out screencap -p > "$OUT/53_overlay_over_other_app.png"
+echo "撮影: 53_overlay_over_other_app"
+shot_live 54_settings_home_bottom .home.SettingsActivity "${REAL[@]}" --es category home
+adb shell input swipe 600 500 600 100 300
+sleep 2
+adb exec-out screencap -p > "$OUT/55_settings_home_scrolled.png"
+echo "撮影: 55_settings_home_scrolled"
 for want in "Wi-Fi監視を開始" "Wi-FiをONに戻す操作" "画面OFF"; do
   grep -q "$want" "$OUT/events.tsv" || echo "::warning::記録に「$want」がありません"
 done

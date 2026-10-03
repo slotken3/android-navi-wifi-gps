@@ -441,7 +441,7 @@ public class HomeActivity extends BaseActivity {
         if (pkg != null) {
             tile.setSubtitle(AppCatalog.label(this, pkg));
         } else {
-            tile.setSubtitle(pkgs.isEmpty() ? "未設定(長押しで選ぶ)" : "アプリが見つかりません",
+            tile.setSubtitle(pkgs.isEmpty() ? "未設定(長押しで選ぶ)" : "未インストール",
                     color(R.color.warn));
         }
     }
@@ -449,7 +449,7 @@ public class HomeActivity extends BaseActivity {
     private void updateGroupTile(TileView tile, Slot slot) {
         List<String> installed = AppCatalog.installedOnly(this, HomePrefs.apps(this, slot));
         if (installed.isEmpty()) {
-            tile.setSubtitle("アプリが見つかりません", color(R.color.warn));
+            tile.setSubtitle("未インストール", color(R.color.warn));
             return;
         }
         List<String> labels = new ArrayList<>();

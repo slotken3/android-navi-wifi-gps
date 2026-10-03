@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.livraison.wifiwatchdog">
 
     <!-- Wi-Fi制御・監視 -->
@@ -21,6 +22,13 @@
 
     <!-- 解析用に純正アプリの apk を Download に写す(フェーズ0 作業1。調査画面のボタンを押したときだけ求める) -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    <!-- 他のアプリの上に小さなホームボタンを重ねる(要件U10) -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <!-- 他のアプリを全画面で開く(policy_control)。ADB で1回だけ許可する(要件U10) -->
+    <uses-permission
+        android:name="android.permission.WRITE_SECURE_SETTINGS"
+        tools:ignore="ProtectedPermissions" />
 
     <application
         android:name=".WatchdogApp"
@@ -92,6 +100,10 @@
             android:name=".home.AppListActivity"
             android:exported="false"
             android:theme="@style/Theme.Home" />
+
+        <service
+            android:name=".home.OverlayButtonService"
+            android:exported="false" />
         <!-- 再生中の曲を読むための入口(通知へのアクセス)。通知の中身は読まない -->
         <service
             android:name=".home.MediaListener"

@@ -117,10 +117,11 @@
             android:paddingStart="16dp"
             android:paddingEnd="16dp">
 
-            <!-- 左カード: 地図(要件U13) / 自宅へ・目的地を検索 / 再生中の曲 -->
+            <!-- 左カード: 地図(要件U13) / 自宅へ・目的地を検索 / 再生中の曲。案Aでは幅400 -->
             <LinearLayout
-                android:layout_width="400dp"
+                android:layout_width="0dp"
                 android:layout_height="match_parent"
+                android:layout_weight="400"
                 android:background="@drawable/bg_card"
                 android:orientation="vertical"
                 android:padding="12dp">
@@ -277,12 +278,13 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- 右: 3列×2行のタイル。上段「動画・音楽・電話」、下段「会議・CarPlay・ドラレコ」 -->
+            <!-- 右: 3列×2行のタイル。上段「動画・音楽・電話」、下段「会議・CarPlay・ドラレコ」。
+                 左右は案Aの 400:576 の比率(160dpi の 1024 幅でちょうど案Aの寸法になる) -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_marginStart="16dp"
-                android:layout_weight="1"
+                android:layout_weight="576"
                 android:orientation="vertical">
 
                 <LinearLayout

@@ -57,8 +57,9 @@ final class MapSetup {
         map.getController().setZoom(DEFAULT_ZOOM);
         map.getController().setCenter(FALLBACK);
         map.getOverlayManager().getTilesOverlay().setColorFilter(darkFilter());
-        map.getOverlayManager().getTilesOverlay().setLoadingBackgroundColor(0xFF1F2A31);
-        map.getOverlayManager().getTilesOverlay().setLoadingLineColor(0xFF2B3840);
+        // 読み込み中の背景にも暗くする加工がかかるので、加工後に暗くなる明るい色を渡す
+        map.getOverlayManager().getTilesOverlay().setLoadingBackgroundColor(0xFFE6E6E6);
+        map.getOverlayManager().getTilesOverlay().setLoadingLineColor(0xFFCFCFCF);
         return map;
     }
 

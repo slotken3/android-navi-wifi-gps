@@ -151,6 +151,19 @@ final class HomePrefs {
         sp(c).edit().putBoolean(KEY_MAP_OFFLINE, offline).apply();
     }
 
+    // ---------------------------------------------------------------
+    // 重ねるホームボタン(要件U10)
+    // ---------------------------------------------------------------
+    private static final String KEY_OVERLAY = "overlay_button";
+
+    static boolean overlayEnabled(Context c) {
+        return sp(c).getBoolean(KEY_OVERLAY, false);
+    }
+
+    static void setOverlayEnabled(Context c, boolean enabled) {
+        sp(c).edit().putBoolean(KEY_OVERLAY, enabled).apply();
+    }
+
     /** 「自宅へ」の行き先。空なら Google マップに「自宅」で頼む */
     static String homeAddress(Context c) {
         return sp(c).getString(KEY_HOME_ADDRESS, "");

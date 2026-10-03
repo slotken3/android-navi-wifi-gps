@@ -336,10 +336,39 @@ public class SettingsActivity extends BaseActivity {
                     }
                 });
 
-        addHeader("全画面とホームボタン(段階1)");
-        addRow("アプリを全画面で開く", "ステータスバーと下のメニューを出さない(U10)", "段階1", null);
+        addHeader("全画面とホームボタン(U10)");
+        boolean overlay = HomePrefs.overlayEnabled(this);
+        boolean overlayPermitted = Settings.canDrawOverlays(this);
         addRow("画面の隅の小さなホームボタン",
-                "他のアプリの上に重ねる許可が要る。実機で要確認(U10)", "段階1", null);
+                "他のアプリを開いている間、左下に丸いボタンを出し、押すとナビホームに戻る。"
+                        + "「他のアプリの上に重ねて表示」の許可が要る",
+                !overlay ? "無効" : (overlayPermitted ? "有効" : "許可が必要"), v -> {
+                    if (!Settings.canDrawOverlays(this)) {
+                        HomePrefs.setOverlayEnabled(this, true);
+                        try {
+                            startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                    android.net.Uri.parse("package:" + getPackageName())));
+                        } catch (ActivityNotFoundException e) {
+                            Toast.makeText(this, "許可の画面を開けませんでした", Toast.LENGTH_SHORT).show();
+                        }
+                    } else {
+                        HomePrefs.setOverlayEnabled(this, !HomePrefs.overlayEnabled(this));
+                    }
+                    rebuild();
+                });
+
+        boolean canImmersive = ImmersiveMode.canWrite(this);
+        addRow("他のアプリを全画面で開く",
+                canImmersive
+                        ? "ステータスバーと下のメニューを隠す(端をスワイプすると一時的に出る)。FYTのバーに効くかは実機で確認"
+                        : "ADBで1回だけ許可が要る: " + ImmersiveMode.GRANT_COMMAND,
+                !canImmersive ? "許可が必要" : (ImmersiveMode.isOn(this) ? "有効" : "無効"),
+                canImmersive ? v -> {
+                    if (!ImmersiveMode.set(this, !ImmersiveMode.isOn(this))) {
+                        Toast.makeText(this, "切り替えられませんでした", Toast.LENGTH_SHORT).show();
+                    }
+                    rebuild();
+                } : null);
     }
 
     private void editHomeAddress() {

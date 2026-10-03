@@ -27,12 +27,16 @@ abstract class BaseActivity extends AppCompatActivity {
         super.onResume();
         // 走行中の判定(GPSの速度)。画面が見えている間だけ使う
         Driving.start(this);
+        // 自分の画面が見えている間は、重ねるホームボタンを隠す
+        OverlayButtonService.hide(this);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         Driving.stop(this);
+        // 他のアプリに切り替わったら、重ねるホームボタンを出す(要件U10)
+        OverlayButtonService.show(this);
     }
 
     @Override
@@ -55,6 +59,9 @@ abstract class BaseActivity extends AppCompatActivity {
         if (i.hasExtra("demo_usage")) {
             HomePrefs.setDemoUsagePercent(this,
                     i.getIntExtra("demo_usage", -1));
+        }
+        if (i.hasExtra("overlay_enabled")) {
+            HomePrefs.setOverlayEnabled(this, i.getBooleanExtra("overlay_enabled", false));
         }
         if (i.hasExtra("map_offline")) {
             HomePrefs.setMapOffline(this, i.getBooleanExtra("map_offline", false));
