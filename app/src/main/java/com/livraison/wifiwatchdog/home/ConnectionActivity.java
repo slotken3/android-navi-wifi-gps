@@ -143,7 +143,9 @@ public class ConnectionActivity extends BaseActivity {
         usageBar.setProgressTintList(ColorStateList.valueOf(color(s.usageColorRes())));
         long left = Math.max(0, s.simLimitMb - s.simUsedMb);
         usageNote.setText(String.format(Locale.JAPAN,
-                "残り %.1f GB ・ 80%%で黄色、100%%で赤 ・ 実測は段階1", left / 1024f));
+                "残り %.1f GB ・ 80%%で黄色、100%%で赤 ・ %s", left / 1024f,
+                s.usageSimulated ? "表示確認のデモ値" : "起動してからのモバイル通信量を足し合わせた値"));
+        findViewById(R.id.usage_badge).setVisibility(s.usageSimulated ? View.VISIBLE : View.GONE);
 
         boolean running = ConnectionStatus.isMonitorRunning(this);
         monitorLine.setText(running

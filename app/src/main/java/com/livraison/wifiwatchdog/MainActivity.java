@@ -56,6 +56,11 @@ public class MainActivity extends AppCompatActivity {
 
         requestLocationPermissionIfNeeded();
 
+        // アプリを開いたら、ボタンを押さなくても監視を始める(フェーズ0指示書 2-2)
+        if (prefs.getBoolean(Prefs.KEY_AUTO_START, true) && !WifiMonitorService.isRunning(this)) {
+            WifiMonitorService.start(this, "Wi-Fi設定画面を開いた");
+        }
+
         saveButton.setOnClickListener(v -> saveSettings());
 
         useCurrentButton.setOnClickListener(v -> {

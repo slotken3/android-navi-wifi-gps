@@ -254,7 +254,7 @@ public class HomeActivity extends BaseActivity {
         tileStatus.setAccent(statusColor);
         tileStatus.setTitle(s.routeName());
         // SSIDは長くてあふれるので、接続状態の画面だけに出す
-        String line2 = "SIM " + s.usageTextShort() + "(デモ)";
+        String line2 = "SIM " + s.usageTextShort() + (s.usageSimulated ? "(デモ)" : "");
         tileStatus.setSubtitle(s.onlineTextShort() + "\n" + line2,
                 s.online ? color(R.color.text_secondary) : statusColor);
         tileStatus.setProgress(s.usagePercent(), color(s.usageColorRes()));

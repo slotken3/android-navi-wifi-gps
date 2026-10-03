@@ -30,7 +30,6 @@ final class HomePrefs {
     private static final String KEY_DEMO_USAGE = "demo_usage_percent";
 
     static final int DEFAULT_SIM_LIMIT_GB = 20;
-    static final int DEFAULT_DEMO_USAGE = 62;
 
     private HomePrefs() {
     }
@@ -92,18 +91,23 @@ final class HomePrefs {
         sp(c).edit().putBoolean(KEY_DEMO_DRIVING, driving).apply();
     }
 
-    /** SIMの通信量は段階1で実測する。それまではこの割合で表示する */
+    /** SIMの通信量を、表示確認のために上限の何%で見せるか。-1 なら実測を出す */
     static int demoUsagePercent(Context c) {
-        return sp(c).getInt(KEY_DEMO_USAGE, DEFAULT_DEMO_USAGE);
+        return sp(c).getInt(KEY_DEMO_USAGE, -1);
     }
 
+    /** 負の値を渡すと、表示確認をやめて実測に戻す */
     static void setDemoUsagePercent(Context c, int percent) {
-        sp(c).edit().putInt(KEY_DEMO_USAGE, Math.max(0, Math.min(100, percent))).apply();
+        if (percent < 0) {
+            sp(c).edit().remove(KEY_DEMO_USAGE).apply();
+        } else {
+            sp(c).edit().putInt(KEY_DEMO_USAGE, Math.min(100, percent)).apply();
+        }
     }
 
     /** 実際と違う状態を表示しているか(画面に「デモ表示中」を出す) */
     static boolean isDemoActive(Context c) {
-        return !ROUTE_REAL.equals(demoRoute(c)) || demoDriving(c);
+        return !ROUTE_REAL.equals(demoRoute(c)) || demoDriving(c) || demoUsagePercent(c) >= 0;
     }
 
     static void clearDemo(Context c) {

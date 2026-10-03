@@ -41,7 +41,7 @@ abstract class BaseActivity extends AppCompatActivity {
         }
         if (i.hasExtra("demo_usage")) {
             HomePrefs.setDemoUsagePercent(this,
-                    i.getIntExtra("demo_usage", HomePrefs.DEFAULT_DEMO_USAGE));
+                    i.getIntExtra("demo_usage", -1));
         }
         // タイルの割り当て(例: --es slot_video com.android.gallery3d,com.android.deskclock)。
         // エミュレーターに入っているアプリで、補足が2行になる状態を作るため

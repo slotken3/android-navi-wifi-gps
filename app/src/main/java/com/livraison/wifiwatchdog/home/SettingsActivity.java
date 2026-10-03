@@ -58,7 +58,7 @@ public class SettingsActivity extends BaseActivity {
             HomePrefs.ROUTE_REAL, HomePrefs.ROUTE_WIFI, HomePrefs.ROUTE_WIFI_NO_NET,
             HomePrefs.ROUTE_SIM, HomePrefs.ROUTE_NONE};
     private static final String[] ROUTE_LABELS = {"実際", "Wi-Fi", "Wi-Fi不通", "SIM", "通信なし"};
-    private static final int[] USAGE_VALUES = {40, 85, 100};
+    private static final int[] USAGE_VALUES = {-1, 40, 85, 100};
 
     private LinearLayout nav;
     private LinearLayout content;
@@ -227,7 +227,8 @@ public class SettingsActivity extends BaseActivity {
         stepper.addView(plus, new LinearLayout.LayoutParams(size, size));
         content.addView(stepper);
         addNote("上限の80%でホーム画面の接続タイルを黄色、100%で赤にします。"
-                + "通信量の実測は段階1です(今はデモ値)。SIMのプランと予算は未確定。");
+                + "通信量は、監視が起動してからのモバイル通信量を15秒ごとに足し合わせた値です。"
+                + "最初に読むまでと電源が落ちる直前の分は数えられません。SIMのプランと予算は未確定。");
 
         addHeader("Wi-Fi監視");
         boolean running = ConnectionStatus.isMonitorRunning(this);
@@ -479,12 +480,12 @@ public class SettingsActivity extends BaseActivity {
         addNote("走行中は、設定の変更とタイルの長押しを止め、会議は音声のみの表示になります。"
                 + "実際の走行判定(GPSの速度)は段階1です。");
 
-        addHeader("SIMの通信量(デモ値)");
+        addHeader("SIMの通信量(「実測」以外は表示確認のデモ値)");
         LinearLayout usage = addContainer();
         int usageIndex = -1;
         String[] usageLabels = new String[USAGE_VALUES.length];
         for (int i = 0; i < USAGE_VALUES.length; i++) {
-            usageLabels[i] = USAGE_VALUES[i] + "%";
+            usageLabels[i] = USAGE_VALUES[i] < 0 ? "実測" : USAGE_VALUES[i] + "%";
             if (USAGE_VALUES[i] == HomePrefs.demoUsagePercent(this)) usageIndex = i;
         }
         Ui.segments(this, usage, usageLabels, usageIndex, i -> {

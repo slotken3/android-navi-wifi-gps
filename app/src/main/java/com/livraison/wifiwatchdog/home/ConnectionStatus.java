@@ -10,6 +10,7 @@ import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 
 import com.livraison.wifiwatchdog.R;
+import com.livraison.wifiwatchdog.SimUsage;
 import com.livraison.wifiwatchdog.WifiMonitorService;
 
 import java.util.Locale;
@@ -36,6 +37,8 @@ final class ConnectionStatus {
     long simLimitMb;
     /** 表示確認(デモ)の値か */
     boolean simulated;
+    /** SIMの通信量が表示確認(デモ)の値か */
+    boolean usageSimulated;
 
     private ConnectionStatus() {
     }
@@ -49,7 +52,14 @@ final class ConnectionStatus {
             s.applyDemo(demo);
         }
         s.simLimitMb = HomePrefs.simLimitGb(c) * 1024L;
-        s.simUsedMb = s.simLimitMb * HomePrefs.demoUsagePercent(c) / 100;
+        int demoUsage = HomePrefs.demoUsagePercent(c);
+        if (demoUsage >= 0) {
+            s.simUsedMb = s.simLimitMb * demoUsage / 100;
+            s.usageSimulated = true;
+        } else {
+            // 監視サービスが15秒ごとに足し合わせている値(要件N5)
+            s.simUsedMb = SimUsage.monthBytes(c) / (1024 * 1024);
+        }
         return s;
     }
 

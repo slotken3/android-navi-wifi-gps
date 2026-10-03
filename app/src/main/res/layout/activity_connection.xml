@@ -130,6 +130,7 @@
                             android:paddingTop="2dp"
                             android:paddingEnd="10dp"
                             android:paddingBottom="2dp"
+                            android:id="@+id/usage_badge"
                             android:text="デモ値"
                             android:textColor="@color/warn"
                             android:textSize="13sp" />

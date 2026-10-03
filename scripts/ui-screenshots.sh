@@ -68,7 +68,7 @@ shot() {
   fi
 }
 
-REAL=(--es demo_route real --ez demo_driving false --ei demo_usage 62)
+REAL=(--es demo_route real --ez demo_driving false --ei demo_usage -1)
 
 echo "== ホーム"
 shot 01_home                  .home.HomeActivity "${REAL[@]}"

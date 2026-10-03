@@ -191,6 +191,7 @@ public class WifiMonitorService extends Service {
         @Override
         public void run() {
             detectSleepGap();
+            SimUsage.update(WifiMonitorService.this);
             checkHealthAndMaybeRecover();
             handler.postDelayed(this, HEALTH_CHECK_INTERVAL_MS);
         }
