@@ -37,6 +37,11 @@ adb などで画面を指定するときは `com.tiantian.ttclock/com.livraison.
 ## UIの注意
 
 - 配色は暗い色だけ(要件U3)。押せるものは1辺64dp以上(U2)。
+  配色・配置はフェーズ0指示書の「案A」(`res/values/colors.xml`)。フォントは BIZ UDPゴシック(OFL、全文を assets に同梱)。
+- 地図は osmdroid + OpenStreetMap 公式サーバー。**利用ポリシーを守ること**: 独自の User-Agent・
+  7日間の使い回し・保存200MBまで・**まとめ取り(オフライン用の一括取得)はしない**(`home/MapSetup.java`)。
+  CI では `map_offline` で地図を取りに行かない。
+- 全画面(policy_control)は WRITE_SECURE_SETTINGS を ADB で1回許可したときだけ動く。無くても他は動く。
 - ホームの候補(HOME)は `activity-alias` で**初期無効**。有効のまま配ると、ホームボタンで
   選択画面が出て走行中に操作を求めることになる。
 - 走行中は設定の変更を受け付けない(U5)。段階0では走行判定がデモ値。
