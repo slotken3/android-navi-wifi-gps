@@ -46,6 +46,7 @@ public class TileView extends LinearLayout {
     private int iconRes;
     private int accent;
     private CharSequence subtitleText;
+    private boolean locked;
 
     // 前回どの条件で詰め方を決めたか。同じなら決め直さない(毎回決め直すと再描画が止まらない)
     private int fitWidth = -1;
@@ -165,7 +166,7 @@ public class TileView extends LinearLayout {
         return mode == MODE_DENSE;
     }
 
-    /** 詰めた表示のときだけ、名前の左にアイコンを出す */
+    /** 詰めた表示のときは名前の左にアイコンを、鍵が掛かっているときは右に鍵を出す */
     private void updateTitleIcon() {
         Drawable d = null;
         if (dense() && iconRes != 0) {
@@ -176,9 +177,26 @@ public class TileView extends LinearLayout {
             int size = Ui.dp(getContext(), large ? 36 : 24);
             d.setBounds(0, 0, size, size);
             d.setTint(accent);
-            title.setCompoundDrawablePadding(Ui.dp(getContext(), 8));
         }
-        title.setCompoundDrawablesRelative(d, null, null, null);
+        Drawable lock = null;
+        if (locked) {
+            lock = getContext().getDrawable(R.drawable.ic_lock);
+            if (lock != null) {
+                lock = lock.mutate();
+                int size = Ui.dp(getContext(), 22);
+                lock.setBounds(0, 0, size, size);
+                lock.setTint(getContext().getColor(R.color.warn));
+            }
+        }
+        title.setCompoundDrawablePadding(Ui.dp(getContext(), 8));
+        title.setCompoundDrawablesRelative(d, null, lock, null);
+    }
+
+    /** 走行中に使えないタイルに鍵の印を付ける(要件U5) */
+    public void setLocked(boolean l) {
+        if (locked == l) return;
+        locked = l;
+        updateTitleIcon();
     }
 
     public void setAccent(int color) {

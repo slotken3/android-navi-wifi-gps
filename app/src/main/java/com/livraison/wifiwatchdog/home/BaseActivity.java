@@ -23,6 +23,19 @@ abstract class BaseActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        // 走行中の判定(GPSの速度)。画面が見えている間だけ使う
+        Driving.start(this);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Driving.stop(this);
+    }
+
+    @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
@@ -42,6 +55,9 @@ abstract class BaseActivity extends AppCompatActivity {
         if (i.hasExtra("demo_usage")) {
             HomePrefs.setDemoUsagePercent(this,
                     i.getIntExtra("demo_usage", -1));
+        }
+        if (i.hasExtra("map_offline")) {
+            HomePrefs.setMapOffline(this, i.getBooleanExtra("map_offline", false));
         }
         // タイルの割り当て(例: --es slot_video com.android.gallery3d,com.android.deskclock)。
         // エミュレーターに入っているアプリで、補足が2行になる状態を作るため

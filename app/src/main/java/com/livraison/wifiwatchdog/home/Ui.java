@@ -43,7 +43,7 @@ final class Ui {
             b.setMaxLines(1);
             if (i == selected) {
                 b.setBackgroundResource(R.drawable.bg_segment_on);
-                b.setTextColor(c.getColor(R.color.accent_navi));
+                b.setTextColor(c.getColor(R.color.accent));
             }
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                     0, dp(c, 64), 1f);

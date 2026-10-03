@@ -3,7 +3,9 @@
     <style name="AppTheme" parent="Theme.AppCompat">
         <item name="colorPrimary">@color/surface</item>
         <item name="colorPrimaryDark">@color/bg</item>
-        <item name="colorAccent">@color/accent_navi</item>
+        <item name="colorAccent">@color/accent</item>
+        <item name="android:fontFamily">@font/biz_udp_gothic</item>
+        <item name="fontFamily">@font/biz_udp_gothic</item>
         <item name="android:windowBackground">@color/bg</item>
     </style>
 
@@ -11,11 +13,18 @@
     <style name="Theme.Home" parent="Theme.AppCompat.NoActionBar">
         <item name="colorPrimary">@color/surface</item>
         <item name="colorPrimaryDark">@color/bg</item>
-        <item name="colorAccent">@color/accent_navi</item>
+        <item name="colorAccent">@color/accent</item>
+        <item name="android:fontFamily">@font/biz_udp_gothic</item>
+        <item name="fontFamily">@font/biz_udp_gothic</item>
         <item name="android:windowBackground">@color/bg</item>
         <item name="android:navigationBarColor">@color/bg</item>
         <item name="android:textColorPrimary">@color/text_primary</item>
         <item name="android:textColorSecondary">@color/text_secondary</item>
+    </style>
+
+    <!-- ホーム画面。案Aは 600px の高さを使い切るので、システムのステータスバーを隠す -->
+    <style name="Theme.Home.Fullscreen" parent="Theme.Home">
+        <item name="android:windowFullscreen">true</item>
     </style>
 
     <!-- 画面上部のバー(戻る + 見出し) -->
@@ -45,6 +54,30 @@
         <item name="android:textSize">18sp</item>
         <item name="android:clickable">true</item>
         <item name="android:focusable">true</item>
+    </style>
+
+    <!-- ホーム上部バーの丸いバッジ(色は backgroundTint で付ける) -->
+    <style name="Badge">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">40dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:minWidth">56dp</item>
+        <item name="android:paddingStart">12dp</item>
+        <item name="android:paddingEnd">12dp</item>
+        <item name="android:background">@drawable/bg_pill</item>
+        <item name="android:backgroundTint">@color/surface_high</item>
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- アイコンだけのボタン -->
+    <style name="IconButton">
+        <item name="android:layout_width">56dp</item>
+        <item name="android:layout_height">56dp</item>
+        <item name="android:background">@drawable/bg_button</item>
+        <item name="android:tint">@color/text_primary</item>
+        <item name="android:scaleType">center</item>
     </style>
 
     <style name="Card">

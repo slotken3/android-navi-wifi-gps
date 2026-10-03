@@ -1,28 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    配色は暗い色だけ(要件U3)。白地は作らない。
-    文字も純白にせず、夜間のまぶしさを抑える。
+    配色は暗い色だけ(要件U3)。昼の配色は作らない。
+    値はフェーズ0指示書「6. デザインの指定(ホーム画面 案A)」の配色表。
 -->
 <resources>
-    <color name="bg">#0A0E13</color>
-    <color name="surface">#141A22</color>
-    <color name="surface_high">#1C2430</color>
-    <color name="stroke">#232C38</color>
-    <color name="scrim">#E6050709</color>
+    <!-- 背景・カード・ボタン・線 -->
+    <color name="bg">#0E1316</color>
+    <color name="surface">#172026</color>
+    <color name="surface_high">#1F2A31</color>
+    <color name="stroke">#2B3840</color>
+    <color name="scrim">#E60A0E10</color>
 
-    <color name="text_primary">#E1E7ED</color>
-    <color name="text_secondary">#93A1B0</color>
-    <color name="text_disabled">#56616D</color>
+    <!-- 文字 -->
+    <color name="text_primary">#EEF3F5</color>
+    <color name="text_secondary">#9FAEB6</color>
+    <color name="text_disabled">#5E6B72</color>
 
-    <color name="ok">#3FB27F</color>
-    <color name="warn">#E0A43A</color>
-    <color name="ng">#E5534B</color>
+    <!-- 強調(ターコイズ)と、その上に載せる文字 -->
+    <color name="accent">#46C2B4</color>
+    <color name="on_accent">#062320</color>
 
-    <color name="accent_navi">#4C8DFF</color>
-    <color name="accent_video">#E8705F</color>
-    <color name="accent_music">#A77BF3</color>
-    <color name="accent_meeting">#3BB3B0</color>
-    <color name="accent_carplay">#5BBF6A</color>
-    <color name="accent_dashcam">#E0A43A</color>
-    <color name="accent_neutral">#93A1B0</color>
+    <!-- 状態: 正常(Wi-Fi接続など)・注意(SIM使用中など)・異常/録画中 -->
+    <color name="ok">#4CC38A</color>
+    <color name="warn">#F0A93B</color>
+    <color name="ng">#EF6B63</color>
+
+    <!-- タイルのアイコン。案Aは強調色を1つにするので、すべてターコイズ -->
+    <color name="accent_navi">#46C2B4</color>
+    <color name="accent_video">#46C2B4</color>
+    <color name="accent_music">#46C2B4</color>
+    <color name="accent_meeting">#46C2B4</color>
+    <color name="accent_carplay">#46C2B4</color>
+    <color name="accent_dashcam">#46C2B4</color>
+    <color name="accent_neutral">#9FAEB6</color>
 </resources>

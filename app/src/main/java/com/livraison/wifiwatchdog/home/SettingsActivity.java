@@ -321,10 +321,41 @@ public class SettingsActivity extends BaseActivity {
                 + "走行中に操作を求めることになります。そのため、ここで明示的に有効にする形にしています。"
                 + "FYT機でホームの切替がそもそも効くかは、実機で確かめる必要があります。");
 
+        addHeader("ホーム画面の機能");
+        String home = HomePrefs.homeAddress(this);
+        addRow("自宅の住所(「自宅へ」の行き先)",
+                "空のときは Google マップに「自宅」で頼みます(マップに登録した自宅を使う見込み)",
+                TextUtils.isEmpty(home) ? "未設定" : home, v -> editHomeAddress());
+        addRow("通知へのアクセス(再生中の曲名の表示)",
+                "許可しなくても、前・再生/一時停止・次のボタンは使えます",
+                NowPlaying.permitted(this) ? "許可済み" : "未許可", v -> {
+                    try {
+                        startActivity(new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS));
+                    } catch (ActivityNotFoundException e) {
+                        Toast.makeText(this, "設定画面を開けませんでした", Toast.LENGTH_SHORT).show();
+                    }
+                });
+
         addHeader("全画面とホームボタン(段階1)");
         addRow("アプリを全画面で開く", "ステータスバーと下のメニューを出さない(U10)", "段階1", null);
         addRow("画面の隅の小さなホームボタン",
                 "他のアプリの上に重ねる許可が要る。実機で要確認(U10)", "段階1", null);
+    }
+
+    private void editHomeAddress() {
+        android.widget.EditText input = new android.widget.EditText(this);
+        input.setText(HomePrefs.homeAddress(this));
+        input.setHint("例: 東京都千代田区丸の内1-9-1");
+        input.setSingleLine(true);
+        new AlertDialog.Builder(this)
+                .setTitle("自宅の住所")
+                .setView(input)
+                .setPositiveButton("保存", (d, w) -> {
+                    HomePrefs.setHomeAddress(this, input.getText().toString());
+                    rebuild();
+                })
+                .setNegativeButton("やめる", null)
+                .show();
     }
 
     private void openHomeChooser() {
@@ -472,13 +503,15 @@ public class SettingsActivity extends BaseActivity {
 
         addHeader("走行中の表示(要件U5の確認)");
         LinearLayout driving = addContainer();
-        Ui.segments(this, driving, new String[]{"停車中", "走行中"},
-                HomePrefs.isDriving(this) ? 1 : 0, i -> {
+        Ui.segments(this, driving, new String[]{"実際(GPS)", "走行中"},
+                HomePrefs.demoDriving(this) ? 1 : 0, i -> {
                     HomePrefs.setDemoDriving(this, i == 1);
                     rebuild();
                 });
-        addNote("走行中は、設定の変更とタイルの長押しを止め、会議は音声のみの表示になります。"
-                + "実際の走行判定(GPSの速度)は段階1です。");
+        addNote("走行中は、動画と設定に鍵を掛け、タイルの長押しを止め、会議は音声のみの表示になります。"
+                + "「実際(GPS)」では、GPSの速度が時速10km以上で走行中、時速3km以下が20秒続くと停車中にします"
+                + "(今は " + (Driving.isDrivingByGps() ? "走行中" : "停車中")
+                + (Driving.hasFix() ? "・測位できています" : "・測位できていません") + ")。");
 
         addHeader("SIMの通信量(「実測」以外は表示確認のデモ値)");
         LinearLayout usage = addContainer();
@@ -516,7 +549,11 @@ public class SettingsActivity extends BaseActivity {
         addNote("実際に動くもの:アプリの起動、接続経路と通信できるかの表示、Wi-Fi監視の稼働表示、"
                 + "起動・スリープ・切断・復旧の記録、USB機器・カメラ・マイクの一覧、"
                 + "protected_app.txt の読み取り。\n"
-                + "デモ値のもの:SIMの通信量、走行中の判定。");
+                + "デモ値のもの:表示確認で選んだときだけ。");
+        addHeader("使っているもの");
+        addNote("フォント:BIZ UDPゴシック(SIL Open Font License 1.1。全文はアプリ内の "
+                + "assets/licenses/OFL-BIZUDPGothic.txt)\n"
+                + "地図:© OpenStreetMap contributors(表示は osmdroid、Apache License 2.0)");
     }
 
     // ---------------------------------------------------------------

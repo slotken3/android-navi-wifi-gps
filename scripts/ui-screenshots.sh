@@ -68,7 +68,8 @@ shot() {
   fi
 }
 
-REAL=(--es demo_route real --ez demo_driving false --ei demo_usage -1)
+# map_offline: CIでは OpenStreetMap のサーバーから地図を取らない(利用ポリシーへの配慮)
+REAL=(--es demo_route real --ez demo_driving false --ei demo_usage -1 --ez map_offline true)
 
 echo "== ホーム"
 shot 01_home                  .home.HomeActivity "${REAL[@]}"
@@ -108,6 +109,7 @@ adb shell wm density reset
 # (2026-10-01、実機でタイルの補足の2行目が切れた。エミュレーターでは補足が1行で気づけなかった)
 echo "== 実機に近い高さ"
 SLOTS=(--es slot_navi com.android.settings
+       --es slot_phone com.android.dialer
        --es slot_video com.android.gallery3d,com.android.deskclock,com.android.calendar
        --es slot_music com.android.documentsui,com.android.email,com.android.messaging
        --es slot_meeting com.android.contacts,com.android.dialer

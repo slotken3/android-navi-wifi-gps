@@ -1,14 +1,23 @@
 package com.livraison.wifiwatchdog.home;
 
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.drawable.Drawable;
+import android.location.Location;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
 import android.text.TextUtils;
+import android.view.GestureDetector;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -19,6 +28,11 @@ import com.livraison.wifiwatchdog.Prefs;
 import com.livraison.wifiwatchdog.R;
 import com.livraison.wifiwatchdog.WifiMonitorService;
 
+import org.osmdroid.util.GeoPoint;
+import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider;
+import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -26,29 +40,40 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * ホーム画面(要件U1〜U6)。
+ * ホーム画面(要件U1〜U6・U13、フェーズ0指示書 6章「案A」)。
  *
  * 既定のホームにするかどうかは、設定 → ホームアプリ で切り替える。
- * 初期状態ではふつうのアプリとして一覧から開くだけ。
+ * 初期状態ではふつうのアプリとして開くだけ。
  */
 public class HomeActivity extends BaseActivity {
 
     private static final long REFRESH_MS = 3000L;
+    private static final String GOOGLE_MAPS = "com.google.android.apps.maps";
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("M月d日(E)", Locale.JAPAN);
 
-    private TileView tileNavi;
     private TileView tileVideo;
     private TileView tileMusic;
+    private TileView tilePhone;
     private TileView tileMeeting;
     private TileView tileCarplay;
     private TileView tileDashcam;
-    private TileView tileStatus;
+    private TileView dockSettings;
     private TextView dateView;
     private View demoBadge;
-    private View monitorDot;
-    private TextView monitorText;
+    private View drivingBadge;
+    private TextView gpsBadge;
+    private TextView monitorBadge;
+    private View connBadge;
+    private View connDot;
+    private TextView connText;
+    private TextView npTitle;
+    private TextView npArtist;
+    private ImageButton npPlay;
+
+    private MapView map;
+    private MyLocationNewOverlay myLocation;
 
     private View pickerScrim;
     private TextView pickerTitle;
@@ -69,43 +94,76 @@ public class HomeActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
-        tileNavi = findViewById(R.id.tile_navi);
         tileVideo = findViewById(R.id.tile_video);
         tileMusic = findViewById(R.id.tile_music);
+        tilePhone = findViewById(R.id.tile_phone);
         tileMeeting = findViewById(R.id.tile_meeting);
         tileCarplay = findViewById(R.id.tile_carplay);
         tileDashcam = findViewById(R.id.tile_dashcam);
-        tileStatus = findViewById(R.id.tile_status);
+        dockSettings = findViewById(R.id.dock_settings);
         dateView = findViewById(R.id.date);
         demoBadge = findViewById(R.id.demo_badge);
-        monitorDot = findViewById(R.id.monitor_dot);
-        monitorText = findViewById(R.id.monitor_text);
+        drivingBadge = findViewById(R.id.driving_badge);
+        gpsBadge = findViewById(R.id.gps_badge);
+        monitorBadge = findViewById(R.id.monitor_badge);
+        connBadge = findViewById(R.id.conn_badge);
+        connDot = findViewById(R.id.conn_dot);
+        connText = findViewById(R.id.conn_text);
+        npTitle = findViewById(R.id.np_title);
+        npArtist = findViewById(R.id.np_artist);
+        npPlay = findViewById(R.id.np_play);
         pickerScrim = findViewById(R.id.picker_scrim);
         pickerTitle = findViewById(R.id.picker_title);
         pickerNote = findViewById(R.id.picker_note);
         pickerHint = findViewById(R.id.picker_hint);
         pickerItems = findViewById(R.id.picker_items);
 
-        bindSlot(tileNavi, Slot.NAVI);
         bindSlot(tileVideo, Slot.VIDEO);
         bindSlot(tileMusic, Slot.MUSIC);
+        bindSlot(tilePhone, Slot.PHONE);
         bindSlot(tileMeeting, Slot.MEETING);
         bindSlot(tileCarplay, Slot.CARPLAY);
         bindSlot(tileDashcam, Slot.DASHCAM);
         bindSlot(findViewById(R.id.dock_radio), Slot.RADIO);
-        bindSlot(findViewById(R.id.dock_phone), Slot.PHONE);
 
         View.OnClickListener openConnection =
                 v -> startActivity(new Intent(this, ConnectionActivity.class));
-        tileStatus.setOnClickListener(openConnection);
-        findViewById(R.id.monitor_chip).setOnClickListener(openConnection);
+        connBadge.setOnClickListener(openConnection);
+        monitorBadge.setOnClickListener(openConnection);
+        findViewById(R.id.dock_home).setOnClickListener(v -> {
+            closePicker();
+            recenterMap();
+        });
         findViewById(R.id.dock_apps).setOnClickListener(
                 v -> startActivity(new Intent(this, AppListActivity.class)));
-        findViewById(R.id.dock_settings).setOnClickListener(
-                v -> startActivity(new Intent(this, SettingsActivity.class)));
+        dockSettings.setOnClickListener(v -> {
+            // 走行中は設定を開かない(要件U5)
+            if (HomePrefs.isDriving(this)) {
+                toast("設定は停車中に変更できます");
+                return;
+            }
+            startActivity(new Intent(this, SettingsActivity.class));
+        });
+
+        findViewById(R.id.btn_go_home).setOnClickListener(v -> navigateHome());
+        findViewById(R.id.btn_search).setOnClickListener(v -> searchDestination());
+        findViewById(R.id.np_prev).setOnClickListener(v -> NowPlaying.previous(this));
+        npPlay.setOnClickListener(v -> NowPlaying.playPause(this));
+        findViewById(R.id.np_next).setOnClickListener(v -> NowPlaying.next(this));
+        findViewById(R.id.np_info).setOnClickListener(v -> {
+            if (!NowPlaying.permitted(this)) openNotificationAccess();
+        });
+        findViewById(R.id.zoom_in).setOnClickListener(v -> {
+            if (map != null) map.getController().zoomIn();
+        });
+        findViewById(R.id.zoom_out).setOnClickListener(v -> {
+            if (map != null) map.getController().zoomOut();
+        });
 
         pickerScrim.setOnClickListener(v -> closePicker());
         findViewById(R.id.picker_close).setOnClickListener(v -> closePicker());
+
+        setupMap();
 
         // CIの画面確認用: 選択パネルを開いた状態で表示する
         String panel = getIntent().getStringExtra("open_panel");
@@ -125,6 +183,11 @@ public class HomeActivity extends BaseActivity {
         if (autoStart && !ConnectionStatus.isMonitorRunning(this)) {
             WifiMonitorService.start(this, "ナビホームを開いた");
         }
+        // 地図はホームが見えている間だけ描き、位置を更新する(全画面アプリの間は止める)
+        if (map != null) {
+            map.onResume();
+            if (myLocation != null) myLocation.enableMyLocation();
+        }
         handler.post(refresher);
     }
 
@@ -132,6 +195,11 @@ public class HomeActivity extends BaseActivity {
     protected void onPause() {
         super.onPause();
         handler.removeCallbacks(refresher);
+        if (map != null) {
+            saveLastPosition();
+            if (myLocation != null) myLocation.disableMyLocation();
+            map.onPause();
+        }
     }
 
     @Override
@@ -155,6 +223,93 @@ public class HomeActivity extends BaseActivity {
     }
 
     // ---------------------------------------------------------------
+    // 地図(要件U13)
+    // ---------------------------------------------------------------
+    private void setupMap() {
+        FrameLayout frame = findViewById(R.id.map_frame);
+        try {
+            map = MapSetup.create(this, HomePrefs.mapOffline(this) && BuildConfig.DEBUG);
+        } catch (RuntimeException e) {
+            // 地図が使えなくても、ホームのほかの部分は使えるようにする
+            ((TextView) findViewById(R.id.map_placeholder)).setText("地図を表示できません");
+            return;
+        }
+        frame.addView(map, 0, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        findViewById(R.id.map_placeholder).setVisibility(View.GONE);
+
+        // 起動直後は、測位できるまで前回の位置を出す
+        double[] last = HomePrefs.lastPosition(this);
+        if (last != null) map.getController().setCenter(new GeoPoint(last[0], last[1]));
+
+        myLocation = new MyLocationNewOverlay(new GpsMyLocationProvider(this), map);
+        myLocation.enableFollowLocation();
+        map.getOverlays().add(myLocation);
+
+        // 地図をタップするとナビアプリを開く。ドラッグで地図を動かすことはしない(走行中の誤操作を防ぐ)
+        GestureDetector tap = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
+            @Override
+            public boolean onSingleTapUp(MotionEvent e) {
+                openSlot(Slot.NAVI);
+                return true;
+            }
+        });
+        map.setOnTouchListener((v, e) -> {
+            tap.onTouchEvent(e);
+            return true;
+        });
+    }
+
+    private void recenterMap() {
+        if (myLocation == null) return;
+        myLocation.enableFollowLocation();
+        GeoPoint p = myLocation.getMyLocation();
+        if (p != null) map.getController().animateTo(p);
+    }
+
+    private void saveLastPosition() {
+        GeoPoint p = myLocation != null ? myLocation.getMyLocation() : null;
+        if (p != null) {
+            HomePrefs.setLastPosition(this, p.getLatitude(), p.getLongitude());
+            return;
+        }
+        Location l = Driving.lastLocation();
+        if (l != null) HomePrefs.setLastPosition(this, l.getLatitude(), l.getLongitude());
+    }
+
+    // ---------------------------------------------------------------
+    // 自宅へ・目的地を検索(Google マップに頼む)
+    // ---------------------------------------------------------------
+    private void navigateHome() {
+        String home = HomePrefs.homeAddress(this);
+        // 住所が未設定なら「自宅」で頼む(Google マップに登録した自宅を使う見込み。実機で要確認)
+        Uri uri = Uri.parse("google.navigation:q=" + Uri.encode(TextUtils.isEmpty(home) ? "自宅" : home));
+        startMaps(uri);
+    }
+
+    private void searchDestination() {
+        startMaps(Uri.parse("geo:0,0?q="));
+    }
+
+    private void startMaps(Uri uri) {
+        Intent i = new Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        if (AppCatalog.isInstalled(this, GOOGLE_MAPS)) i.setPackage(GOOGLE_MAPS);
+        try {
+            startActivity(i);
+        } catch (ActivityNotFoundException e) {
+            toast("ナビアプリを開けませんでした");
+        }
+    }
+
+    private void openNotificationAccess() {
+        try {
+            startActivity(new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS));
+        } catch (ActivityNotFoundException e) {
+            toast("通知へのアクセスの設定画面がありません");
+        }
+    }
+
+    // ---------------------------------------------------------------
     // タイル
     // ---------------------------------------------------------------
     private void bindSlot(View tile, Slot slot) {
@@ -166,9 +321,13 @@ public class HomeActivity extends BaseActivity {
     }
 
     private void onSlotTapped(Slot slot) {
-        List<String> pkgs = HomePrefs.apps(this, slot);
+        // 走行中は動画を開かない(要件U5)
+        if (slot == Slot.VIDEO && HomePrefs.isDriving(this)) {
+            toast("動画は停車中に見られます");
+            return;
+        }
         if (slot.group) {
-            List<String> installed = AppCatalog.installedOnly(this, pkgs);
+            List<String> installed = AppCatalog.installedOnly(this, HomePrefs.apps(this, slot));
             // 入っているのが1つだけなら、選ばせずにそのまま開く
             if (installed.size() == 1) {
                 AppCatalog.launch(this, installed.get(0));
@@ -177,7 +336,11 @@ public class HomeActivity extends BaseActivity {
             }
             return;
         }
-        String pkg = AppCatalog.firstInstalled(this, pkgs);
+        openSlot(slot);
+    }
+
+    private void openSlot(Slot slot) {
+        String pkg = AppCatalog.firstInstalled(this, HomePrefs.apps(this, slot));
         if (pkg != null) {
             AppCatalog.launch(this, pkg);
         } else {
@@ -189,8 +352,7 @@ public class HomeActivity extends BaseActivity {
     /** 長押しで割り当てを変える。走行中は受け付けない(要件U5) */
     private void editSlot(Slot slot) {
         if (HomePrefs.isDriving(this)) {
-            Toast.makeText(this, "走行中は変更できません。停車してから操作してください",
-                    Toast.LENGTH_LONG).show();
+            toast("走行中は変更できません。停車してから操作してください");
             return;
         }
         if (slot.group) {
@@ -205,23 +367,72 @@ public class HomeActivity extends BaseActivity {
     private void refresh() {
         dateView.setText(dateFormat.format(new Date()));
         demoBadge.setVisibility(HomePrefs.isDemoActive(this) ? View.VISIBLE : View.GONE);
+        boolean driving = HomePrefs.isDriving(this);
+        drivingBadge.setVisibility(driving ? View.VISIBLE : View.GONE);
+        boolean fix = Driving.hasFix();
+        gpsBadge.setTextColor(color(fix ? R.color.ok : R.color.text_disabled));
 
         boolean running = ConnectionStatus.isMonitorRunning(this);
-        monitorDot.setBackgroundTintList(ColorStateList.valueOf(
-                color(running ? R.color.ok : R.color.ng)));
-        monitorText.setText(running ? "Wi-Fi監視 稼働中" : "Wi-Fi監視 停止中");
+        monitorBadge.setText(running ? "監視" : "監視停止");
+        monitorBadge.setTextColor(color(running ? R.color.text_secondary : R.color.bg));
+        monitorBadge.setBackgroundTintList(ColorStateList.valueOf(
+                color(running ? R.color.surface_high : R.color.ng)));
 
-        updateSingleTile(tileNavi, Slot.NAVI);
+        updateConnectionBadge();
+
         updateGroupTile(tileVideo, Slot.VIDEO);
+        tileVideo.setLocked(driving);
+        if (driving) tileVideo.setSubtitle("停車中に見られます", color(R.color.warn));
         updateGroupTile(tileMusic, Slot.MUSIC);
+        updateSingleTile(tilePhone, Slot.PHONE);
         updateGroupTile(tileMeeting, Slot.MEETING);
-        if (HomePrefs.isDriving(this)) {
+        if (driving) {
             // 走行中はカメラを使わず音声のみ(要件U12)
             tileMeeting.setSubtitle("走行中は音声のみ", color(R.color.warn));
         }
         updateSingleTile(tileCarplay, Slot.CARPLAY);
         updateSingleTile(tileDashcam, Slot.DASHCAM);
-        updateStatusTile();
+        dockSettings.setLocked(driving);
+
+        updateNowPlaying();
+    }
+
+    /** 接続のバッジ(要件N7): Wi-Fi は緑、SIM は橙、つながっているが通信できないときは灰、なしは赤 */
+    private void updateConnectionBadge() {
+        ConnectionStatus s = ConnectionStatus.read(this);
+        int bg;
+        String text;
+        if (s.route == ConnectionStatus.Route.NONE) {
+            bg = R.color.ng;
+            text = "接続なし";
+        } else if (!s.online) {
+            bg = R.color.text_disabled;
+            text = "接続中";
+        } else if (s.route == ConnectionStatus.Route.SIM) {
+            bg = R.color.warn;
+            text = "SIM";
+        } else {
+            bg = R.color.ok;
+            text = s.routeName();
+        }
+        connBadge.setBackgroundTintList(ColorStateList.valueOf(color(bg)));
+        connDot.setBackgroundTintList(ColorStateList.valueOf(color(R.color.bg)));
+        connText.setText(text);
+    }
+
+    private void updateNowPlaying() {
+        NowPlaying n = NowPlaying.read(this);
+        if (!NowPlaying.permitted(this)) {
+            npTitle.setText("再生中の曲");
+            npArtist.setText("曲名は「通知へのアクセス」を許可すると出ます");
+        } else if (n == null || TextUtils.isEmpty(n.title)) {
+            npTitle.setText("再生していません");
+            npArtist.setText("");
+        } else {
+            npTitle.setText(n.title);
+            npArtist.setText(n.artist == null ? "" : n.artist);
+        }
+        npPlay.setImageResource(n != null && n.playing ? R.drawable.ic_pause : R.drawable.ic_play);
     }
 
     private void updateSingleTile(TileView tile, Slot slot) {
@@ -246,18 +457,8 @@ public class HomeActivity extends BaseActivity {
         tile.setSubtitle(TextUtils.join("・", labels));
     }
 
-    /** 接続状態のタイル(要件N7) */
-    private void updateStatusTile() {
-        ConnectionStatus s = ConnectionStatus.read(this);
-        int statusColor = color(s.statusColorRes());
-        tileStatus.setIcon(s.iconRes());
-        tileStatus.setAccent(statusColor);
-        tileStatus.setTitle(s.routeName());
-        // SSIDは長くてあふれるので、接続状態の画面だけに出す
-        String line2 = "SIM " + s.usageTextShort() + (s.usageSimulated ? "(デモ)" : "");
-        tileStatus.setSubtitle(s.onlineTextShort() + "\n" + line2,
-                s.online ? color(R.color.text_secondary) : statusColor);
-        tileStatus.setProgress(s.usagePercent(), color(s.usageColorRes()));
+    private void toast(String text) {
+        Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
     }
 
     // ---------------------------------------------------------------

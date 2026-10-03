@@ -114,11 +114,49 @@ final class HomePrefs {
         sp(c).edit().remove(KEY_DEMO_ROUTE).remove(KEY_DEMO_DRIVING).remove(KEY_DEMO_USAGE).apply();
     }
 
-    /**
-     * 走行中か(要件U5)。段階1でGPSの速度から判定する。
-     * 段階0では表示確認の値だけを見る。
-     */
+    /** 走行中か(要件U5)。GPSの速度で判定し、表示確認で「走行中」にしていればそれに従う */
     static boolean isDriving(Context c) {
-        return demoDriving(c);
+        return demoDriving(c) || Driving.isDrivingByGps();
+    }
+
+    // ---------------------------------------------------------------
+    // 地図(要件U13)
+    // ---------------------------------------------------------------
+    private static final String KEY_LAST_LAT = "last_lat";
+    private static final String KEY_LAST_LON = "last_lon";
+    private static final String KEY_MAP_OFFLINE = "map_offline";
+    private static final String KEY_HOME_ADDRESS = "home_address";
+
+    /** 起動直後に、測位できるまで出す前回の位置。無ければ null */
+    static double[] lastPosition(Context c) {
+        SharedPreferences p = sp(c);
+        if (!p.contains(KEY_LAST_LAT)) return null;
+        return new double[]{Double.longBitsToDouble(p.getLong(KEY_LAST_LAT, 0)),
+                Double.longBitsToDouble(p.getLong(KEY_LAST_LON, 0))};
+    }
+
+    static void setLastPosition(Context c, double lat, double lon) {
+        sp(c).edit()
+                .putLong(KEY_LAST_LAT, Double.doubleToRawLongBits(lat))
+                .putLong(KEY_LAST_LON, Double.doubleToRawLongBits(lon))
+                .apply();
+    }
+
+    /** 地図を取りに行かない(CIの画面確認用。OSMのサーバーに負担をかけないため) */
+    static boolean mapOffline(Context c) {
+        return sp(c).getBoolean(KEY_MAP_OFFLINE, false);
+    }
+
+    static void setMapOffline(Context c, boolean offline) {
+        sp(c).edit().putBoolean(KEY_MAP_OFFLINE, offline).apply();
+    }
+
+    /** 「自宅へ」の行き先。空なら Google マップに「自宅」で頼む */
+    static String homeAddress(Context c) {
+        return sp(c).getString(KEY_HOME_ADDRESS, "");
+    }
+
+    static void setHomeAddress(Context c, String address) {
+        sp(c).edit().putString(KEY_HOME_ADDRESS, address == null ? "" : address.trim()).apply();
     }
 }

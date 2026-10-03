@@ -53,7 +53,7 @@
             android:label="@string/home_name"
             android:launchMode="singleTask"
             android:stateNotNeeded="true"
-            android:theme="@style/Theme.Home">
+            android:theme="@style/Theme.Home.Fullscreen">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -92,6 +92,17 @@
             android:name=".home.AppListActivity"
             android:exported="false"
             android:theme="@style/Theme.Home" />
+        <!-- 再生中の曲を読むための入口(通知へのアクセス)。通知の中身は読まない -->
+        <service
+            android:name=".home.MediaListener"
+            android:exported="true"
+            android:label="@string/home_name"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
 
         <service
             android:name=".WifiMonitorService"
